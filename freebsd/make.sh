@@ -1,6 +1,8 @@
 #!/bin/sh
 #
-# Based on: http://lastsummer.de/creating-custom-packages-on-freebsd/
+# Based on:
+#   http://lastsummer.de/creating-custom-packages-on-freebsd/
+#   https://docs.freebsd.org/en/books/porters-handbook/plist/
 #
 
 DIR="$(dirname "$(realpath "$0")")"
@@ -38,16 +40,18 @@ deps: {
 EOF
 
 mkdir -p "${STAGEDIR}/usr/local/bin" || exit 1
+mkdir -p "${STAGEDIR}/usr/local/etc" || exit 1
 mkdir -p "${STAGEDIR}/usr/local/share/arfycat" || exit 1
 cp "${DIR}/../bash/bashutils.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
 cp "${DIR}/../bash/hc" "${STAGEDIR}/usr/local/bin/" || exit 1
-
+cp "${DIR}/../bash/hc.conf" "${STAGEDIR}/usr/local/etc/hc.conf.sample" || exit 1
 #
 # plist
 #
 cat > "${STAGEDIR}/plist" << EOF || exit 1
 @dir(root,wheel,755) share/arfycat
 @(root,wheel,755) bin/hc
+@sample(root,wheel,644) etc/hc.conf.sample
 @(root,wheel,755) share/arfycat/bashutils.sh
 EOF
 
