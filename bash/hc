@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+umask 077
+
+if [[ $# -lt 2 ]]; then
+  echo "Usage: $0 <Check ID> <Command> [Arguments] ..."
+  exit 1
+fi
+
+if [[ -r ~/.hc.conf ]]; then
+  PING_URL="$(cat ~/.hc.conf)"; [[ $? -ne 0 ]] && exit 127
+elif [[ -r /usr/local/etc/hc.conf ]]; then
+  PING_URL="$(cat /usr/local/etc/hc.conf)"; [[ $? -ne 0 ]] && exit 127
+elif [[ -r /etc/hc.conf ]]; then
+  PING_URL="$(cat /etc/hc.conf)"; [[ $? -ne 0 ]] && exit 127
+else
+  PING_URL="https://hc-ping.com"
+fi
+
+DATE="$(date +%Y%m%d_%H%M%S)"
+CHECK_ID="$1"
+shift
+
+CMD="$1"
+shift
+
+cleanup() {
+  if [[ -v TMP_LOG ]]; then
+    rm -f -- "${TMP_LOG}"
+  fi
+}
+
+TMP_LOG="$(mktemp)"
+trap cleanup EXIT
+
+"${CMD}" "$@" > "${TMP_LOG}" 2>&1
+RET=$?
+
+CURL_ARGS="-fs -m 10 --retry 10 -o /dev/null -w %{http_code}"
+if [[ -s "${TMP_LOG}" ]]; then
+  HC_CODE="$(curl ${CURL_ARGS} --data-binary "@${TMP_LOG}" "${PING_URL}/${CHECK_ID}/${RET}")"
+  HC_RET=$?
+else
+  HC_CODE="$(curl ${CURL_ARGS} "${PING_URL}/${CHECK_ID}/${RET}")"
+  HC_RET=$?
+fi
+
+if [[ ${HC_RET} -ne 0 || "${HC_CODE}" != "200" ]]; then
+  LOG_DIR="log/hc"
+  LOG="$(basename "${CMD}")-${DATE}.log"
+  cd && mkdir -p "${LOG_DIR}" && mv -- "${TMP_LOG}" "${LOG_DIR}/${LOG}" > /dev/null 2>&1
+fi
+
+exit ${RET}

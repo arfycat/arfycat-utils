@@ -1,0 +1,16 @@
+name: arfycat-utils
+version: 20220504_00
+origin: local
+comment: Utilities
+www: https://github.com/arfycat/arfycat-utils
+maintainer: arfycat-utils@arfycat.com
+prefix: /usr/local
+desc: <<EOF
+Utilities
+EOF
+
+deps: {
+  bash: {origin: shells/bash}
+  flock: {origin: sysutils/flock}
+  curl: {origin: ftp/curl}
+}
