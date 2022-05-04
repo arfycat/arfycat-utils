@@ -1,4 +1,8 @@
 #!/bin/sh
+#
+# Based on: http://lastsummer.de/creating-custom-packages-on-freebsd/
+#
+
 DIR="$(dirname "$(realpath "$0")")"
 STAGEDIR="${DIR}/work"
 VERSION="$(date "+%Y%m%d-%H%M%S")"
