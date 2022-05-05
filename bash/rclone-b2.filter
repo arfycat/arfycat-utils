@@ -1,0 +1,11 @@
++ /etc/**
++ /home/**
++ /root/**
++ /usr/local/**
++ /var/cron/**
++ /var/spool/cron/**
++ /var/spool/uptimed/records
++ /var/web/**
++ /var/www/**
+
+- **

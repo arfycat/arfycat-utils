@@ -53,7 +53,7 @@ Architecture: all
 Homepage: https://github.com/arfycat/arfycat-utils
 Maintainer: arfycat-utils@arfycat.com
 Description: A collection of utilities used by Arfycat hosts.
-Depends: bash, curl, util-linux
+Depends: bash, curl, sshpass, util-linux
 EOF
 
   #
@@ -61,14 +61,24 @@ EOF
   #
   cat > "${PKGDIR}/DEBIAN/conffiles" << EOF || exit 1
 /etc/hc.conf
+/etc/rclone.filter
+/etc/rclone-b2.filter
 EOF
 
   mkdir -p "${PKGDIR}/etc" || exit 1
   mkdir -p "${PKGDIR}/usr/bin" || exit 1
   mkdir -p "${PKGDIR}/usr/share/arfycat" || exit 1
+  cp "${DIR}/../bash/apt-updates.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
   cp "${DIR}/../bash/bashutils.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
+  cp "${DIR}/../bash/cron-status.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
   cp "${DIR}/../bash/hc" "${PKGDIR}/usr/bin/" || exit 1
-  cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/"
+  cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/" || exit 1
+  cp "${DIR}/../bash/rclone.filter" "${PKGDIR}/etc/" || exit 1
+  cp "${DIR}/../bash/rclone.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
+  cp "${DIR}/../bash/rclone-b2.filter" "${PKGDIR}/etc/" || exit 1
+  cp "${DIR}/../bash/rclone-b2.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
+  cp "${DIR}/../bash/status.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
+  cp "${DIR}/../bash/sysrq-reboot.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
   sudo chown -R root:root "${PKGDIR}" || exit 1
   sudo chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit 1
   dpkg-deb -Z xz --build "${PKGDIR}" || exit 1
