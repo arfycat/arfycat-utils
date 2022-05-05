@@ -9,6 +9,27 @@ DIR="$(dirname "$(realpath "$0")")"
 STAGEDIR="${DIR}/work"
 VERSION="$(date "+%Y%m%d-%H%M%S")"
 PKGDIR="${STAGEDIR}/arfycat-utils_${VERSION}_all"
+PKGSDIR="${DIR}/packages"
+
+repo() {
+  if [[ ! -d "${PKGSDIR}" ]]; then
+    mkdir "${PKGSDIR}" || return 1
+  fi
+
+  find "${STAGEDIR}" -name "*.deb" -exec cp {} "${PKGSDIR}"/ \;
+  cd "${PKGSDIR}" || return 1
+  rm -f -- Release
+  apt-ftparchive packages . > Packages || return 1
+  gzip -9kf Packages || return 1
+  TMP="$(mktemp)"
+  apt-ftparchive release . > "${TMP}" || { rm -f -- "${TMP}"; return 1; }
+  mv "${TMP}" Release || return 1
+}
+
+if [[ $# -ge 1 && "$1" == "repo" ]]; then
+  repo
+  exit $?
+fi
 
 if [ -d "${STAGEDIR}" ]; then
   sudo rm -rf -- "${STAGEDIR}" || exit 1
@@ -16,6 +37,10 @@ fi
 
 if [ ! -d "${STAGEDIR}" ]; then
   mkdir "${STAGEDIR}" || exit 1
+fi
+
+if [[ ! -d "${PKGSDIR}" ]]; then
+  mkdir "${PKGSDIR}" || exit 1
 fi
 
 cd "${STAGEDIR}" || exit 1
@@ -51,5 +76,4 @@ cp "${DIR}/../bash/hc" "${PKGDIR}/usr/bin/" || exit 1
 cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/"
 sudo chown -R root:root "${PKGDIR}" || exit 1
 sudo chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit 1
-
-dpkg-deb --build "${PKGDIR}" || exit 4
+dpkg-deb --build "${PKGDIR}" || exit 1
