@@ -26,32 +26,27 @@ repo() {
   mv "${TMP}" Release || return 1
 }
 
-if [[ $# -ge 1 && "$1" == "repo" ]]; then
-  repo
-  exit $?
-fi
+package() {
+  if [ -d "${STAGEDIR}" ]; then
+    sudo rm -rf -- "${STAGEDIR}" || exit 1
+  fi
 
-if [ -d "${STAGEDIR}" ]; then
-  sudo rm -rf -- "${STAGEDIR}" || exit 1
-fi
+  if [ ! -d "${STAGEDIR}" ]; then
+    mkdir "${STAGEDIR}" || exit 1
+  fi
 
-if [ ! -d "${STAGEDIR}" ]; then
-  mkdir "${STAGEDIR}" || exit 1
-fi
+  if [[ ! -d "${PKGSDIR}" ]]; then
+    mkdir "${PKGSDIR}" || exit 1
+  fi
 
-if [[ ! -d "${PKGSDIR}" ]]; then
-  mkdir "${PKGSDIR}" || exit 1
-fi
+  cd "${STAGEDIR}" || exit 1
+  mkdir "${PKGDIR}" || exit 1
 
-cd "${STAGEDIR}" || exit 1
-
-mkdir "${PKGDIR}" || exit 1
-
-#
-# DEBIAN/control
-#
-mkdir -p "${PKGDIR}/DEBIAN"
-cat > "${PKGDIR}/DEBIAN/control" << EOF || exit 1
+  #
+  # DEBIAN/control
+  #
+  mkdir -p "${PKGDIR}/DEBIAN"
+  cat > "${PKGDIR}/DEBIAN/control" << EOF || exit 1
 Package: arfycat-utils
 Version: ${VERSION}
 Architecture: all
@@ -61,19 +56,29 @@ Description: A collection of utilities used by Arfycat hosts.
 Depends: bash, curl, util-linux
 EOF
 
-#
-# DEBIAN/conffiles
-#
-cat > "${PKGDIR}/DEBIAN/conffiles" << EOF || exit 1
+  #
+  # DEBIAN/conffiles
+  #
+  cat > "${PKGDIR}/DEBIAN/conffiles" << EOF || exit 1
 /etc/hc.conf
 EOF
 
-mkdir -p "${PKGDIR}/etc" || exit 1
-mkdir -p "${PKGDIR}/usr/bin" || exit 1
-mkdir -p "${PKGDIR}/usr/share/arfycat" || exit 1
-cp "${DIR}/../bash/bashutils.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
-cp "${DIR}/../bash/hc" "${PKGDIR}/usr/bin/" || exit 1
-cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/"
-sudo chown -R root:root "${PKGDIR}" || exit 1
-sudo chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit 1
-dpkg-deb --build "${PKGDIR}" || exit 1
+  mkdir -p "${PKGDIR}/etc" || exit 1
+  mkdir -p "${PKGDIR}/usr/bin" || exit 1
+  mkdir -p "${PKGDIR}/usr/share/arfycat" || exit 1
+  cp "${DIR}/../bash/bashutils.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
+  cp "${DIR}/../bash/hc" "${PKGDIR}/usr/bin/" || exit 1
+  cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/"
+  sudo chown -R root:root "${PKGDIR}" || exit 1
+  sudo chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit 1
+  dpkg-deb -Z xz --build "${PKGDIR}" || exit 1
+}
+
+if [[ $# -ge 1 && "$1" == "repo" ]]; then
+  repo; exit $?
+elif [[ $# -ge 1 && "$1" == "package" ]]; then
+  package; exit $?
+else
+  package || exit $?
+  repo; exit $?
+fi
