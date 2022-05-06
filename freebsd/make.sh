@@ -51,6 +51,7 @@ cp "${DIR}/../bash/rclone.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
 cp "${DIR}/../bash/rclone-b2.filter" "${STAGEDIR}/usr/local/etc/rclone-b2.filter.sample" || exit 1
 cp "${DIR}/../bash/rclone-b2.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
 cp "${DIR}/../bash/status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
+cp "${DIR}/../vim/.vimrc" "${STAGEDIR}/usr/local/share/arfycat/.vimrc.sample" || exit 1
 #
 # plist
 #
@@ -65,6 +66,7 @@ cat > "${STAGEDIR}/plist" << EOF || exit $?
 @sample(root,wheel,644) etc/rclone-b2.filter.sample
 @(root,wheel,755) share/arfycat/rclone-b2.sh
 @(root,wheel,755) share/arfycat/status.sh
+@sample(root,wheel,644) share/arfycat/.vimrc.sample
 EOF
 
 pkg create -m "${STAGEDIR}" -r "${STAGEDIR}" -p "${STAGEDIR}/plist" || exit $?

@@ -13,40 +13,40 @@ PKGSDIR="${DIR}/packages"
 
 repo() {
   if [[ ! -d "${PKGSDIR}" ]]; then
-    mkdir "${PKGSDIR}" || return 1
+    mkdir "${PKGSDIR}" || return $?
   fi
 
   find "${STAGEDIR}" -name "*.deb" -exec cp {} "${PKGSDIR}"/ \;
-  cd "${PKGSDIR}" || return 1
+  cd "${PKGSDIR}" || return $?
   rm -f -- Release
-  apt-ftparchive packages . > Packages || return 1
-  gzip -9kf Packages || return 1
+  apt-ftparchive packages . > Packages || return $?
+  gzip -9kf Packages || return $?
   TMP="$(mktemp)"
   apt-ftparchive release . > "${TMP}" || { rm -f -- "${TMP}"; return 1; }
-  mv "${TMP}" Release || return 1
+  mv "${TMP}" Release || return $?
 }
 
 package() {
   if [ -d "${STAGEDIR}" ]; then
-    sudo rm -rf -- "${STAGEDIR}" || exit 1
+    sudo rm -rf -- "${STAGEDIR}" || exit $?
   fi
 
   if [ ! -d "${STAGEDIR}" ]; then
-    mkdir "${STAGEDIR}" || exit 1
+    mkdir "${STAGEDIR}" || exit $?
   fi
 
   if [[ ! -d "${PKGSDIR}" ]]; then
-    mkdir "${PKGSDIR}" || exit 1
+    mkdir "${PKGSDIR}" || exit $?
   fi
 
-  cd "${STAGEDIR}" || exit 1
-  mkdir "${PKGDIR}" || exit 1
+  cd "${STAGEDIR}" || exit $?
+  mkdir "${PKGDIR}" || exit $?
 
   #
   # DEBIAN/control
   #
   mkdir -p "${PKGDIR}/DEBIAN"
-  cat > "${PKGDIR}/DEBIAN/control" << EOF || exit 1
+  cat > "${PKGDIR}/DEBIAN/control" << EOF || exit $?
 Package: arfycat-utils
 Version: ${VERSION}
 Architecture: all
@@ -59,30 +59,34 @@ EOF
   #
   # DEBIAN/conffiles
   #
-  cat > "${PKGDIR}/DEBIAN/conffiles" << EOF || exit 1
+  cat > "${PKGDIR}/DEBIAN/conffiles" << EOF || exit $?
 /etc/hc.conf
 /etc/rclone.filter
 /etc/rclone-b2.filter
+/etc/vim/vimrc.local
 EOF
 
-  mkdir -p "${PKGDIR}/etc" || exit 1
-  mkdir -p "${PKGDIR}/usr/bin" || exit 1
-  mkdir -p "${PKGDIR}/usr/share/arfycat" || exit 1
-  cp "${DIR}/../bash/apt-updates.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
-  cp "${DIR}/../bash/bashutils.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
-  cp "${DIR}/../bash/cron-status.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
-  cp "${DIR}/../bash/hc" "${PKGDIR}/usr/bin/" || exit 1
-  cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/" || exit 1
-  cp "${DIR}/../bash/rclone.filter" "${PKGDIR}/etc/" || exit 1
-  cp "${DIR}/../bash/rclone.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
-  cp "${DIR}/../bash/rclone-b2.filter" "${PKGDIR}/etc/" || exit 1
-  cp "${DIR}/../bash/rclone-b2.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
-  cp "${DIR}/../bash/status.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
-  cp "${DIR}/../bash/sysrq-reboot.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
-  cp "${DIR}/../bash/wsl-init.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
-  sudo chown -R root:root "${PKGDIR}" || exit 1
-  sudo chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit 1
-  dpkg-deb -Z xz --build "${PKGDIR}" || exit 1
+  mkdir -p "${PKGDIR}/etc/vim" || exit $?
+  mkdir -p "${PKGDIR}/usr/bin" || exit $?
+  mkdir -p "${PKGDIR}/usr/share/arfycat" || exit $?
+
+  cp "${DIR}/../bash/apt-updates.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/bashutils.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/cron-status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/hc" "${PKGDIR}/usr/bin/" || exit $?
+  cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/" || exit $?
+  cp "${DIR}/../bash/rclone.filter" "${PKGDIR}/etc/" || exit $?
+  cp "${DIR}/../bash/rclone.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/rclone-b2.filter" "${PKGDIR}/etc/" || exit $?
+  cp "${DIR}/../bash/rclone-b2.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/sysrq-reboot.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/wsl-init.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../vim/.vimrc" "${PKGDIR}/etc/vim/vimrc.local" || exit $?
+
+  sudo chown -R root:root "${PKGDIR}" || exit $?
+  sudo chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit $?
+  dpkg-deb -Z xz --build "${PKGDIR}" || exit $?
 }
 
 if [[ $# -ge 1 && "$1" == "repo" ]]; then
