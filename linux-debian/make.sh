@@ -79,6 +79,7 @@ EOF
   cp "${DIR}/../bash/rclone-b2.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
   cp "${DIR}/../bash/status.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
   cp "${DIR}/../bash/sysrq-reboot.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
+  cp "${DIR}/../bash/wsl-init.sh" "${PKGDIR}/usr/share/arfycat/" || exit 1
   sudo chown -R root:root "${PKGDIR}" || exit 1
   sudo chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit 1
   dpkg-deb -Z xz --build "${PKGDIR}" || exit 1
