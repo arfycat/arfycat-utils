@@ -11,7 +11,6 @@ cat "${TMP_LOG}"
 SFTP_LOG=; get_tmp_file SFTP_LOG
 if ! echo "PUT ${TMP_LOG} status.txt" | timeout 15s sshpass -P "passphrase" -f "${ID}.txt" sftp -i "${ID}" ${HOST} >> ${SFTP_LOG} 2>&1; then
   cat "${SFTP_LOG}"
-  fail 1 "Failed to upload status."
 fi
 
 exit ${RET}
