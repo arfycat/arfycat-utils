@@ -79,6 +79,7 @@ EOF
   cp "${DIR}/../bash/rclone.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rclone-b2.filter" "${PKGDIR}/etc/" || exit $?
   cp "${DIR}/../bash/rclone-b2.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/rocm-smi.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/sysrq-reboot.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/wsl-init.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
