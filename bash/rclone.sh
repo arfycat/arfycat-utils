@@ -38,6 +38,8 @@ while [[ $# -gt 0 ]]; do
         else
           fail 1 "Failed to read filter file: ${FILTER_FILE}"
         fi
+      else
+        FILTER_FILE="$(realpath "${FILTER_FILE}")"
       fi
       FILTER="${FILTER} --filter-from ${FILTER_FILE}"
       unset -v FILTER_FILE
