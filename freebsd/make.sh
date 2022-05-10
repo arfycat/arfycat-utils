@@ -10,19 +10,19 @@ STAGEDIR="${DIR}/work"
 VERSION="$(date "+%Y%m%d.%H%M%S")"
 
 if [ -d "${STAGEDIR}" ]; then
-  rm -rf -- "${STAGEDIR}" || exit 1
+  rm -rf -- "${STAGEDIR}" || exit $?
 fi
 
 if [ ! -d "${STAGEDIR}" ]; then
-  mkdir "${STAGEDIR}" || exit 1
+  mkdir "${STAGEDIR}" || exit $? 
 fi
 
-cd "${STAGEDIR}" || exit 1
+cd "${STAGEDIR}" || exit $?
 
 #
 # +MANIFEST
 #
-cat > "${STAGEDIR}/+MANIFEST" << EOF || exit 1
+cat > "${STAGEDIR}/+MANIFEST" << EOF || exit $?
 name: arfycat-utils
 version: "${VERSION}"
 origin: local
@@ -39,21 +39,30 @@ deps: {
 }
 EOF
 
-mkdir -p "${STAGEDIR}/usr/local/bin" || exit 1
-mkdir -p "${STAGEDIR}/usr/local/etc" || exit 1
-mkdir -p "${STAGEDIR}/usr/local/share/arfycat" || exit 1
-cp "${DIR}/../bash/bashutils.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
-cp "${DIR}/../bash/cron-status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
-cp "${DIR}/../bash/hc" "${STAGEDIR}/usr/local/bin/" || exit 1
-cp "${DIR}/../bash/hc.conf" "${STAGEDIR}/usr/local/etc/hc.conf.sample" || exit 1
-cp "${DIR}/../bash/status-jail.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
-cp "${DIR}/../bash/rclone.filter" "${STAGEDIR}/usr/local/etc/rclone.filter.sample" || exit 1
-cp "${DIR}/../bash/rclone.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
-cp "${DIR}/../bash/rclone-b2.filter" "${STAGEDIR}/usr/local/etc/rclone-b2.filter.sample" || exit 1
-cp "${DIR}/../bash/rclone-b2.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
-cp "${DIR}/../bash/status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
-cp "${DIR}/../bash/zfs-snapshot.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 1
-cp "${DIR}/../vim/.vimrc" "${STAGEDIR}/usr/local/share/arfycat/.vimrc.sample" || exit 1
+#
+# Create directory structure
+#
+mkdir -p "${STAGEDIR}/usr/local/bin" || exit $?
+mkdir -p "${STAGEDIR}/usr/local/etc" || exit $?
+mkdir -p "${STAGEDIR}/usr/local/share/arfycat" || exit $?
+
+#
+# Copy files
+#
+cp "${DIR}/../bash/bashutils.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/cron-status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/hc" "${STAGEDIR}/usr/local/bin/" || exit $?
+cp "${DIR}/../bash/hc.conf" "${STAGEDIR}/usr/local/etc/hc.conf.sample" || exit $?
+cp "${DIR}/../bash/status-jail.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/rclone.filter" "${STAGEDIR}/usr/local/etc/rclone.filter.sample" || exit $?
+cp "${DIR}/../bash/rclone.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/rclone-b2.filter" "${STAGEDIR}/usr/local/etc/rclone-b2.filter.sample" || exit $?
+cp "${DIR}/../bash/rclone-b2.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/smart-status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/zfs-snapshot.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../vim/.vimrc" "${STAGEDIR}/usr/local/share/arfycat/.vimrc.sample" || exit $?
+
 #
 # plist
 #
@@ -68,9 +77,13 @@ cat > "${STAGEDIR}/plist" << EOF || exit $?
 @(root,wheel,755) share/arfycat/rclone.sh
 @sample(root,wheel,644) etc/rclone-b2.filter.sample
 @(root,wheel,755) share/arfycat/rclone-b2.sh
+@(root,wheel,755) share/arfycat/smart-status.sh
 @(root,wheel,755) share/arfycat/status.sh
 @(root,wheel,755) share/arfycat/zfs-snapshot.sh
 @sample(root,wheel,644) share/arfycat/.vimrc.sample
 EOF
 
+#
+# Package
+#
 pkg create -m "${STAGEDIR}" -r "${STAGEDIR}" -p "${STAGEDIR}/plist" || exit $?
