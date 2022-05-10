@@ -35,7 +35,7 @@ trap cleanup EXIT
 "${CMD}" "$@" > "${TMP_LOG}" 2>&1
 RET=$?
 
-CURL_ARGS="-fs -m 10 --retry 10 -o /dev/null -w %{http_code}"
+CURL_ARGS="-fs --connect-timeout 10 -m 60 --retry 10 -o /dev/null -w %{http_code}"
 if [[ -s "${TMP_LOG}" ]]; then
   HC_CODE="$(curl ${CURL_ARGS} --data-binary "@${TMP_LOG}" "${PING_URL}/${CHECK_ID}/${RET}")"
   HC_RET=$?
