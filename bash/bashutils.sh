@@ -119,9 +119,9 @@ lock() { # <wait time in seconds>, [lock file suffix]
   local SCRIPT="$(realpath "${0}")"
 
   if [ -d "/var/lock" ]; then
-    local LOCK="/var/lock/${SCRIPT//[^[:alnum:]\.\-]/_}${SUFFIX}.lock"
+    local LOCK="/var/lock/${SCRIPT//[^[:alnum:]\.\-]/_}${SUFFIX//[^[:alnum:]\.\-]/_}.lock"
   else
-    local LOCK="/tmp/${SCRIPT//[^[:alnum:]\.\-]/_}${SUFFIX}.lock"
+    local LOCK="/tmp/${SCRIPT//[^[:alnum:]\.\-]/_}${SUFFIX//[^[:alnum:]\.\-]/_}.lock"
   fi
   exec 3> "${LOCK}"
 
