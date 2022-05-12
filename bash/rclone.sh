@@ -91,8 +91,16 @@ if [[ ! -v PREFIX ]]; then
   PREFIX=
 fi
 
+check_remote() {
+  for i in {0..5}; do
+    rclone listremotes | egrep -q "^${1}:" && return 0
+    sleep 5
+  done
+  return 1
+}
+check_remote "${REMOTE}" || fail 1 "Remote does not exist: ${REMOTE}"
+
 lock 3600 "${REMOTE}"
-rclone listremotes | egrep -q "^${REMOTE}:" || fail 1 "Remote does not exist: ${REMOTE}"
 log "${REMOTE}-${OP}"
 
 TMPLOG=; get_tmp_file TMPLOG
