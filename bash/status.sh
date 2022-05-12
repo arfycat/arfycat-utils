@@ -85,6 +85,13 @@ if [[ $? -eq 0 ]]; then
   echo
 fi
 
+WG="(which wg)"
+if [[ $? -eq 0 ]]; then
+  echo '> wg'
+  "${WG}"
+  echo
+fi
+
 if [[ -v IFSTAT_FILE && -r "${IFSTAT_FILE}" ]]; then cat "${IFSTAT_FILE}";
 elif [[ -v BWMNG_FILE && -r "${BWMNG_FILE}" ]]; then cat "${BWMNG_FILE}"; fi
 
