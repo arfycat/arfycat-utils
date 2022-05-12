@@ -31,10 +31,8 @@ cmd() {
   fi
 
   shift
-  echo $(date): "$@"
   "$@"
   RET=$?
-  echo $(date): Done.
   return ${RET}
 }
 
