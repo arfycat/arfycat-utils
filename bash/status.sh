@@ -85,7 +85,7 @@ if [[ $? -eq 0 ]]; then
   echo
 fi
 
-WG="(which wg)"
+WG="$(which wg)"
 if [[ $? -eq 0 ]]; then
   echo '> wg'
   "${WG}"
