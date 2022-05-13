@@ -75,6 +75,7 @@ EOF
   cp "${DIR}/../bash/cron-status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/hc" "${PKGDIR}/usr/bin/" || exit $?
   cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/" || exit $?
+  cp "${DIR}/../bash/mail-test.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rclone.filter" "${PKGDIR}/etc/" || exit $?
   cp "${DIR}/../bash/rclone.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rclone-b2.filter" "${PKGDIR}/etc/" || exit $?

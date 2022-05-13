@@ -53,6 +53,7 @@ cp "${DIR}/../bash/bashutils.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 
 cp "${DIR}/../bash/cron-status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/hc" "${STAGEDIR}/usr/local/bin/" || exit $?
 cp "${DIR}/../bash/hc.conf" "${STAGEDIR}/usr/local/etc/hc.conf.sample" || exit $?
+cp "${DIR}/../bash/mail-test.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/rclone.filter" "${STAGEDIR}/usr/local/etc/rclone.filter.sample" || exit $?
 cp "${DIR}/../bash/rclone.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/rclone-b2.filter" "${STAGEDIR}/usr/local/etc/rclone-b2.filter.sample" || exit $?
@@ -73,6 +74,7 @@ cat > "${STAGEDIR}/plist" << EOF || exit $?
 @(root,wheel,755) share/arfycat/cron-status.sh
 @(root,wheel,755) bin/hc
 @sample(root,wheel,644) etc/hc.conf.sample
+@(root,wheel,755) share/arfycat/mail-test.sh
 @sample(root,wheel,644) etc/rclone.filter.sample
 @(root,wheel,755) share/arfycat/rclone.sh
 @sample(root,wheel,644) etc/rclone-b2.filter.sample
