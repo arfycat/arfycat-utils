@@ -5,10 +5,10 @@
   set -o pipefail
 
   usage() {
-    fail $1 "Usage: $0 <User> <Working Directory> <Executable Path> [installed | pause | restart | restore (default) | resume | status | start | stop]"
+    fail 255 "Usage: $0 <User> <Working Directory> <Executable Path> [installed | pause | restart | restore (default) | resume | status | start | stop]"
   }
   
-  if [[ $# -lt 3 ]]; then usage 1; fi
+  if [[ $# -lt 3 ]]; then usage; exit 255; fi
 
   export USER="${1}"
   if ! id -u "${USER}" > /dev/null 2>&1; then exit 127; fi
@@ -46,6 +46,14 @@
   else
     ARGS=
   fi
+  
+  if [[ "$(uname)" == "FreeBSD" ]]; then
+    CONT_ARG="-CONT"
+    STOP_ARG="-STOP"
+  else
+    CONT_ARG="-CONT"
+    STOP_ARG="-STOP"
+  fi
 
   if [[ $# -ge 1 ]]; then CMD="$1"; else CMD="restore"; fi
   case $CMD in
@@ -60,8 +68,12 @@
   esac
   shift
 
-  lock 360
+  lock 360 "${EXEC}"
 
+  # 2: Should be stopped
+  # 3: Should be running
+  # 4: Should be paused
+  # 5: Should not be paused
   status() {
     if [[ -f "${STOP}" ]]; then
       if pgrep -U ${UID} "^${FILE}$" > /dev/null; then
@@ -76,7 +88,7 @@
       if [[ $? -eq 0 ]]; then
         STATE="$(ps -o state= "${PID}")"
         if [[ $? -eq 0 ]]; then
-          if [[ "${STATE}" == "T" ]]; then
+          if [[ "${STATE}" =~ "T" ]]; then
             echo "OK: PAUSED"
             exit 0
           else
@@ -92,12 +104,24 @@
         exit 0
       fi
     else
-      if ! pgrep -U ${UID} "^${FILE}$" > /dev/null; then
+      PID="$(pgrep -U ${UID} "^${FILE}$")"
+      if [[ $? -ne 0 ]]; then
         echo "ERROR: STOPPED"
         exit 3
       else
-        echo "OK: RUNNING"
-        exit 0
+        STATE="$(ps -o state= "${PID}")"
+        if [[ $? -eq 0 ]]; then
+          if [[ "${STATE}" =~ "T" ]]; then
+            echo "ERROR: PAUSED"
+            exit 5
+          else
+            echo "OK: RUNNING"
+            exit 0
+          fi
+        else
+          echo "ERROR: STOPPED"
+          exit 3
+        fi
       fi
     fi
 
@@ -126,25 +150,25 @@
   esac
 
   if [[ -f "${STOP}" ]]; then
-    pgrep -xU ${UID} "^${FILE}$" > /dev/null || { status; exit 255; }
-    pkill -xU ${UID} "^${FILE}$" > /dev/null || fail $? "Failed to kill existing ${FILE} processes."
-    sleep 3
+    PIDS="$(pgrep -xU ${UID} "^${FILE}$")"
+    [[ $? -ne 0 ]] && { status; exit 255; }
+    echo "Stopping PID: ${PIDS}"
+    kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
     status; exit 255
   fi
 
   if [[ -f "${PAUSE}" ]]; then
     pgrep -xU ${UID} "^${FILE}$" > /dev/null || { status; exit 255; }
-    pkill -xU ${UID} -STOP "^${FILE}$" > /dev/null || fail $? "Failed to pause existing ${FILE} processes."
-    sleep 3
+    pkill ${STOP_ARG} -xU ${UID} "^${FILE}$" > /dev/null || fail $? "Failed to pause existing ${FILE} processes."
     status; exit 255
   fi
 
   if pgrep -xU ${UID} "^${FILE}$" > /dev/null; then
-    pkill -xU ${UID} -CONT "^${FILE}$" > /dev/null || fail $? "Failed to resume existing ${FILE} processes."
+    pkill ${CONT_ARG} -xU ${UID} "^${FILE}$" > /dev/null || fail $? "Failed to resume existing ${FILE} processes."
     status; exit 255
   fi
 
-  if [[ "${NICE}" != "0" && "${NICE}" != "" ]]; then
+  if [[ -v NICE && "${NICE}" != "0" && "${NICE}" != "" ]]; then
     nice "-n${NICE}" "${EXEC}" ${ARGS} "$@" > "${LOG}" 2>&1 &
     RET=$?; PID=$!
   else
@@ -152,7 +176,7 @@
     RET=$?; PID=$!
   fi
 
-  if [[ ${RET} -ne 0 ]]; then fail ${RET} "Failed to start process."; fi
+  if [[ ${RET} -ne 0 ]]; then fail ${RET} "Failed to start process: ${EXEC}" ${ARGS} "$@"; fi
   sleep 3
   ps -p ${PID} > /dev/null || fail $? "Process failed."
   pgrep -xU ${UID} "^${FILE}$" > /dev/null || fail $? "Process failed."

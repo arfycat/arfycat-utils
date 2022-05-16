@@ -158,3 +158,56 @@ t home directory for user: ${USER}"
   echo "$HOME"
   return 0
 }
+
+kill_pid() {
+  [[ $# -eq 0 ]] && fail 1 "kill_pid(): Invalid arguments, missing PID."
+  local PID="$1"
+  if [[ $# -gt 1 ]]; then
+    local TIMEOUT="$2"
+  else
+    local TIMEOUT="5"
+  fi
+  
+  START_TIME="$(date +%s)"
+  while :; do
+    kill "${PID}" > /dev/null 2>&1
+    ps "${PID}" > /dev/null || return 0
+    if [[ $(($(date +%s) - ${START_TIME})) -gt ${TIMEOUT} ]]; then
+      break
+    fi
+    sleep "0.1"
+  done
+
+  ps "${PID}" > /dev/null || return 0
+  echo "PID ${PID} failed to exit, sending SIGKILL."
+  kill -9 "${PID}" 2>&1 > /dev/null
+  ps "${PID}" > /dev/null || return 0
+  sleep 1
+  ps "${PID}" > /dev/null && { echo "PID ${PID} refuses to die after SIGKILLL."; return 1; }
+  return 0
+}
+
+kill_procs() {
+  [[ $# -eq 0 ]] && return 0
+  local PIDS="$1"
+  if [[ $# -gt 1 ]]; then
+    local TIMEOUT="$2"
+  else
+    local TIMEOUT="5"
+  fi
+
+  for PID in "${PIDS}"; do
+    kill "${PID}" > /dev/null 2>&1
+  done
+
+  START_TIME="$(date +%s)"
+  for PID in "${PIDS}"; do
+    kill_pid "${PID}" "$((${TIMEOUT} - $(date +%s) + ${START_TIME}))"
+  done
+
+  RET=0
+  for PID in "${PIDS}"; do
+    ps "${PID}" > /dev/null && RET=1
+  done
+  return ${RET}
+}
