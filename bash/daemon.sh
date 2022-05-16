@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -x
 {
   if ! PATH="${PATH}:/usr/local/share/arfycat:/usr/share/arfycat" source bashutils.sh; then echo Failed to source arfycat/bashutils.sh; exit 127; fi
   umask 007
@@ -15,6 +15,7 @@
   user "$USER" "$@"
   
   [[ ! -v UID ]] && fail 255 "Missing shell variable UID."
+  export HOST="$(hostname)"; [[ $? -ne 0 ]] && fail 255 "Failed determine hostname."
 
   export USER_HOME="$(get_home "${USER}")"
   export DIR="$(realpath "${2}")"; _R=$?; [[ ${_R} -ne 0 ]] && fail "${_R}" "Failed to determine realpath: ${2}"
@@ -55,7 +56,7 @@
     STOP_ARG="-STOP"
   fi
 
-  if [[ $# -ge 1 ]]; then CMD="$1"; else CMD="restore"; fi
+  if [[ $# -ge 1 && "${1}" != "--" ]]; then CMD="$1"; shift; else CMD="restore"; fi
   case $CMD in
     pause) ;;
     restart) ;;
@@ -66,7 +67,7 @@
     stop) ;;
     *) usage; exit 255
   esac
-  shift
+  [[ $# -ge 1 && "${1}" == "--" ]] && shift
 
   lock 360 "${EXEC}"
 

@@ -103,8 +103,8 @@ user() { # <username>
   local USER="$1"
   shift
 
-  if [[ ${EUID} -eq 0 ]]; then
-    exec su - ${USER} "$(realpath "$0")" "$@"
+  if [[ ${UID} -eq 0 ]]; then
+    SHELL="${BASH}" su ${USER} -- "$(realpath "$0")" "$@"
     exit $?
   elif [[ $(whoami) != ${USER} ]]; then
     fail 1 "$0 must be run as ${USER}"
