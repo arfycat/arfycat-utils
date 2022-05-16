@@ -73,6 +73,7 @@ EOF
   cp "${DIR}/../bash/apt-updates.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/bashutils.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/cron-status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/daemon.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/hc" "${PKGDIR}/usr/bin/" || exit $?
   cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/" || exit $?
   cp "${DIR}/../bash/mail-test.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
