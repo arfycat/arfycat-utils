@@ -163,6 +163,14 @@
     pkill ${STOP_ARG} -xU ${UID} "^${FILE}$" > /dev/null || fail $? "Failed to pause existing ${FILE} processes."
     status; exit 255
   fi
+  
+  if [[ "${CMD}" == "restart" ]]; then
+    PIDS="$(pgrep -xU ${UID} "^${FILE}$")"
+    if [[ $? -eq 0 ]]; then
+      echo "Stopping PID: ${PIDS}"
+      kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
+    fi
+  fi
 
   if pgrep -xU ${UID} "^${FILE}$" > /dev/null; then
     pkill ${CONT_ARG} -xU ${UID} "^${FILE}$" > /dev/null || fail $? "Failed to resume existing ${FILE} processes."
