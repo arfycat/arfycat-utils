@@ -151,12 +151,12 @@
   esac
 
   if [[ -f "${STOP}" ]]; then
-    PIDS="$(pgrep -xU ${UID} "^${FILE}$")"
+    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
     [[ $? -ne 0 ]] && { status; exit 255; }
     echo "Stopping PID: ${PIDS}"
     kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
 
-    PIDS="$(pgrep -xU ${UID} "^${FILE}$")"
+    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
     [[ $? -ne 0 ]] && { status; exit 255; }
     echo "Stopping PID: ${PIDS}"
     kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
@@ -170,13 +170,13 @@
   fi
 
   if [[ "${CMD}" == "restart" ]]; then
-    PIDS="$(pgrep -xU ${UID} "^${FILE}$")"
+    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
     if [[ $? -eq 0 ]]; then
       echo "Stopping PID: ${PIDS}"
       kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
     fi
 
-    PIDS="$(pgrep -xU ${UID} "^${FILE}$")"
+    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
     if [[ $? -eq 0 ]]; then
       echo "Stopping PID: ${PIDS}"
       kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
@@ -199,6 +199,6 @@
   if [[ ${RET} -ne 0 ]]; then fail ${RET} "Failed to start process: ${EXEC}" ${ARGS} "$@"; fi
   sleep 3
   ps -p ${PID} > /dev/null || fail $? "Process failed."
-  pgrep -xU ${UID} "^${FILE}$" > /dev/null || fail $? "Process failed."
+  pgrep -d' ' -xU ${UID} "^${FILE}$" || fail $? "Process failed."
   status; exit 255
 }

@@ -196,17 +196,17 @@ kill_procs() {
     local TIMEOUT="5"
   fi
 
-  for PID in "${PIDS}"; do
+  for PID in ${PIDS}; do
     kill "${PID}" > /dev/null 2>&1
   done
 
   START_TIME="$(date +%s)"
-  for PID in "${PIDS}"; do
+  for PID in ${PIDS}; do
     kill_pid "${PID}" "$((${TIMEOUT} - $(date +%s) + ${START_TIME}))"
   done
 
   RET=0
-  for PID in "${PIDS}"; do
+  for PID in ${PIDS}; do
     ps "${PID}" > /dev/null && RET=1
   done
   return ${RET}
