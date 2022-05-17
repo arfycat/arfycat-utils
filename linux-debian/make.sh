@@ -89,6 +89,8 @@ EOF
   cp "${DIR}/../bash/wsl-init.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/zfs-snapshot.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../vim/.vimrc" "${PKGDIR}/etc/vim/vimrc.local" || exit $?
+  
+  ln -s "hc" "${PKGDIR}/usr/bin/hcl" || exit $?
 
   sudo chown -R root:root "${PKGDIR}" || exit $?
   sudo chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit $?
