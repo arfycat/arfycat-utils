@@ -13,6 +13,29 @@
   user mariabackup "$@"
   lock
 
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -c)
+        COMPRESS=
+        shift
+        ;;
+      --)
+        shift
+        break
+        ;;
+      *)
+        break
+        ;;
+    esac 
+  done
+
+  if [[ $# -lt 1 ]]; then
+    BACKUPDIR="/backup/mariabackup"
+  else
+    BACKUPDIR="$(realpath "$1")"
+  fi
+  [[ ! -d "${BACKUPDIR}" ]] && fail 1 "Backup directory does not exist: ${BACKUPDIR}"
+
   local_cleanup() {
     if [[ -d "${TMPDIR}/mariadb" ]]; then
       rm -rf -- "${TMPDIR}/mariadb"
@@ -22,28 +45,27 @@
   }
   trap local_cleanup EXIT
 
-  if [[ $# -lt 1 ]]; then
-    BACKUPDIR="/backup/mariabackup"
-  else
-    BACKUPDIR="$(realpath "$1")"
-  fi
-  [[ ! -d "${BACKUPDIR}" ]] && fail 1 "Backup directory does not exist: ${BACKUPDIR}"
-
   TMPDIR=; get_tmp_dir TMPDIR
-  mkdir "${TMPDIR}/mariadb" || fail 1 "Failed to create temporary directory."
-  chown :mariabackup "${TMPDIR}/mariadb" || fail 1 "Failed to chown temporary directory."
+  mkdir "${TMPDIR}/mariadb" || fail $? "Failed to create temporary directory."
+  chown :mariabackup "${TMPDIR}/mariadb" || fail $? "Failed to chown temporary directory."
+  cd "${TMPDIR}/mariadb" || fail $? "Failed to change directory."
 
-  mariabackup --backup "--target-dir=${TMPDIR}/mariadb" || fail 1 "Failed to create backup."
+  mariabackup --backup "--target-dir=${TMPDIR}/mariadb" || fail $? "Failed to create backup."
 
   DATE="$(date "+%Y%m%d-%H%M%S")"; [[ $? -ne 0 ]] && fail 1 "Failed to get date."
-  BACKUP="${BACKUPDIR}/backup-${DATE}.tar.xz"
   TMPFILE=; get_tmp_file TMPFILE || fail $? "Failed to create temporary file."
   chown :mariabackup "${TMPFILE}" || fail $? "Failed to chown temporary file."
 
-  tar cvfj "${TMPFILE}" -C "${TMPDIR}" mariadb || fail $? "Failed to create TAR file."
-  mv -- "${TMPFILE}" "${BACKUP}" || fail $? "Failed to move backup file."
+  if [[ -v COMPRESS ]]; then
+    BACKUP="${BACKUPDIR}/backup-${DATE}.tar.xz"
+    nice -n20 tar cvfj "${TMPFILE}" -C "${TMPDIR}" mariadb || fail $? "Failed to create compressed TAR file."
+  else
+    BACKUP="${BACKUPDIR}/backup-${DATE}.tar"
+    nice -n20 tar cvf "${TMPFILE}" -C "${TMPDIR}" mariadb || fail $? "Failed to create TAR file."
+  fi
 
   find "${BACKUPDIR}" -mtime +1 -type f -delete
+  mv -- "${TMPFILE}" "${BACKUP}" || fail $? "Failed to move backup file."
   ls -al "${BACKUPDIR}"
   exit $?
 }
