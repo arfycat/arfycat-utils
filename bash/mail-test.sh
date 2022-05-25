@@ -16,8 +16,10 @@ fi
 
 cat <<EOF | sendmail ${TO}
 Subject: TEST $(date) 
-From: Test Script $0 on ${HOST} <$(whoami)@${HOST}>
+From: TEST ${HOST} <$(whoami)@${HOST}>
 
+
+Test script: $(realpath "$0") $*
 This is a test of the email system.  If this was an actual email, there would be some actual content.
 
 $(uuidgen)
