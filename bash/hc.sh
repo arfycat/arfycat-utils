@@ -100,7 +100,7 @@
 
   CURL_ARGS="-fs --connect-timeout 5 -m 15 -o /dev/null -w %{http_code}"
   if [[ -s "${TMP_LOG}" ]]; then
-    CURL_CMD="timeout -k3 15s curl ${CURL_ARGS} --data-binary \"@${TMP_LOG}\""
+    CURL_CMD="timeout -k3 15s curl ${CURL_ARGS} --data-binary @${TMP_LOG}"
   else
     CURL_CMD="timeout -k3 15s curl ${CURL_ARGS}"
   fi
