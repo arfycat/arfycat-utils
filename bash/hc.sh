@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 {
   umask 077
-  USER="$(logname)"
+  USER="$(whoami)"
 
   usage() {
     echo "Usage: $0 [-n <Nice>] [-t <Timeout Seconds>] <Check ID> <Command> [Arguments] ..."
