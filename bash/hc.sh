@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 {
   umask 077
-  USER="$(whoami)"
 
   usage() {
     echo "Usage: $0 [-n <Nice>] [-t <Timeout Seconds>] <Check ID> <Command> [Arguments] ..."
@@ -124,6 +123,8 @@
       if [[ ${HC_RET} -eq 0 && "${HC_CODE}" == "200" ]]; then
         exit ${RET}
       fi
+      
+      sleep 0.1
     done
 
     if [[ ${SECONDS} -gt ${TIMEOUT} ]]; then
@@ -132,6 +133,7 @@
   done
 
   # Failed to ping HealthChecks, try to save the log and log to syslog.
+  USER="$(whoami)"
   LOGGER="$(which logger)"
   [[ $? -ne 0 ]] && unset LOGGER
   LOGGER_CMD="${LOGGER} -t ${BASENAME}[$$]"
