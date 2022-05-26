@@ -3,6 +3,7 @@
 + /root/**
 + /usr/local/**
 + /var/cron/**
++ /var/lib/apt/extended_states
 + /var/spool/cron/**
 + /var/spool/uptimed/records
 + /var/web/**
