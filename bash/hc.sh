@@ -2,24 +2,57 @@
 {
   umask 077
 
-  if [[ $# -lt 2 ]]; then
-    echo "Usage: $0 <Check ID> <Command> [Arguments] ..."
+  usage() {
+    echo "Usage: $0 [-n <Nice>] [-t <Timeout Seconds>] <Check ID> <Command> [Arguments] ..."
     exit 1
+  }
+
+  if [[ $# -lt 2 ]]; then
+    usage
   fi
 
   if [[ -r ~/.hc.conf ]]; then
-    PING_URL="$(cat ~/.hc.conf)"; [[ $? -ne 0 ]] && exit 127
+    PING_URLS="$(cat ~/.hc.conf)"; [[ $? -ne 0 ]] && exit 127
   elif [[ -r /usr/local/etc/hc.conf ]]; then
-    PING_URL="$(cat /usr/local/etc/hc.conf)"; [[ $? -ne 0 ]] && exit 127
+    PING_URLS="$(cat /usr/local/etc/hc.conf)"; [[ $? -ne 0 ]] && exit 127
   elif [[ -r /etc/hc.conf ]]; then
-    PING_URL="$(cat /etc/hc.conf)"; [[ $? -ne 0 ]] && exit 127
+    PING_URLS="$(cat /etc/hc.conf)"; [[ $? -ne 0 ]] && exit 127
   else
-    PING_URL="https://hc-ping.com"
+    PING_URLS="https://hc-ping.com"
   fi
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -d)
+        DEBUG=
+        shift
+        ;;
+      -n)
+        [[ $# -lt 2 ]] && usage
+        NICE="$2"
+        shift
+        shift
+        ;;
+      -t)
+        [[ $# -lt 2 ]] && usage
+        TIMEOUT="$2"
+        shift
+        shift
+        ;;
+      --)
+        shift
+        break
+        ;;
+      *)
+        break
+        ;;
+    esac 
+  done
+
+  [[ ! -v TIMEOUT ]] && TIMEOUT=50
 
   DATE="$(date +%Y%m%d_%H%M%S)"
   CHECK_ID="$1"
-  PING_URL="${PING_URL}/${CHECK_ID}"
   shift
 
   CMD="$1"
@@ -29,19 +62,20 @@
   #   bashutils.sh as the full logic is not required here.
   lock() {
     if [ -d "/var/lock" ]; then
-      LOCK_FILE="/var/lock/hc-${PING_URL//[^[:alnum:]\.\-]/_}.lock"
+      LOCK_FILE="/var/lock/hc-${CHECK_ID//[^[:alnum:]\.\-]/_}.lock"
     else
-      LOCK_FILE="/tmp/hc-${PING_URL//[^[:alnum:]\.\-]/_}.lock"
+      LOCK_FILE="/tmp/hc-${CHECK_ID//[^[:alnum:]\.\-]/_}.lock"
     fi
     exec 3> "${LOCK_FILE}"
 
     flock -xn 3 || exit 0
   }
 
-  if [[ "$(basename "$0")" == "hcl" ]]; then
+  BASENAME="$(basename "$0")"
+  if [[ "${BASENAME}" == "hcl" ]]; then
     # If we can get the lock immediately, we proceed with the remaining logic.  Otherwise, lock will exit with 0, nothing
     # further gets executed, and HealthChecks is not pinged at all.
-    lock || exit 127
+    lock || exit 126
   fi
 
   cleanup() {
@@ -56,22 +90,45 @@
   TMP_LOG="$(mktemp)"
   trap cleanup EXIT
 
-  "${CMD}" "$@" > "${TMP_LOG}" 2>&1
-  RET=$?
-
-  CURL_ARGS="-fs --connect-timeout 10 -m 60 --retry 10 -o /dev/null -w %{http_code}"
-  if [[ -s "${TMP_LOG}" ]]; then
-    HC_CODE="$(timeout -k10 65s curl ${CURL_ARGS} --data-binary "@${TMP_LOG}" "${PING_URL}/${RET}")"
-    HC_RET=$?
+  if [[ -v NICE ]]; then
+    nice -n "${NICE}" "${CMD}" "$@" > "${TMP_LOG}" 2>&1
+    RET=$?
   else
-    HC_CODE="$(timeout -k10 65s curl ${CURL_ARGS} "${PING_URL}/${RET}")"
-    HC_RET=$?
+    "${CMD}" "$@" > "${TMP_LOG}" 2>&1
+    RET=$?
   fi
 
-  if [[ ${HC_RET} -ne 0 || "${HC_CODE}" != "200" ]]; then
-    LOG_DIR="log/hc"
-    LOG="$(basename "${CMD}")-${DATE}.log"
-    cd && mkdir -p "${LOG_DIR}" && mv -- "${TMP_LOG}" "${LOG_DIR}/${LOG}" > /dev/null 2>&1
+  CURL_ARGS="-fs --connect-timeout 5 -m 15 -o /dev/null -w %{http_code}"
+  if [[ -s "${TMP_LOG}" ]]; then
+    CURL_CMD="timeout -k3 15s curl ${CURL_ARGS} --data-binary \"@${TMP_LOG}\""
+  else
+    CURL_CMD="timeout -k3 15s curl ${CURL_ARGS}"
+  fi
+
+  SECONDS=0
+  while :; do
+    for URL in ${PING_URLS}; do
+      HC_CODE="$(${CURL_CMD} "${URL}/${CHECK_ID}/${RET}")"
+      HC_RET=$?
+
+      if [[ ${HC_RET} -eq 0 && "${HC_CODE}" == "200" ]]; then
+        exit ${RET}
+      fi
+    done
+
+    if [[ ${SECONDS} -gt ${TIMEOUT} ]]; then
+      break
+    fi
+  done
+
+  LOG_DIR="log/hc"
+  LOG="$(basename "${CMD}")-${DATE}.log"
+  { cd && mkdir -p "${LOG_DIR}" && mv -- "${TMP_LOG}" "${LOG_DIR}/${LOG}"; } > /dev/null 2>&1
+  if [[ $? -ne 0 ]]; then
+    logger "${BASENAME}: Failed to move log file to directory: ${LOG_DIR}" > /dev/null 2>&1
+    logger -f "${TMP_LOG}" > /dev/null 2>&1
+  else
+    logger "${BASENAME}: Failed to ping HealthChecks, command output log: ${LOG_DIR}/${LOG}" > /dev/null 2>&1
   fi
 
   exit ${RET}
