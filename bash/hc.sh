@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 {
   umask 077
+  USER="$(logname)"
 
   usage() {
     echo "Usage: $0 [-n <Nice>] [-t <Timeout Seconds>] <Check ID> <Command> [Arguments] ..."
@@ -49,6 +50,10 @@
     esac 
   done
 
+  # Discard stdout and stderr if DEBUG is not set.
+  [[ ! -v DEBUG ]] && { exec 1>/dev/null; exec 2>/dev/null; }
+
+  # Set a default TIMEOUT if not set.
   [[ ! -v TIMEOUT ]] && TIMEOUT=50
 
   DATE="$(date +%Y%m%d_%H%M%S)"
@@ -75,7 +80,7 @@
   if [[ "${BASENAME}" == "hcl" ]]; then
     # If we can get the lock immediately, we proceed with the remaining logic.  Otherwise, lock will exit with 0, nothing
     # further gets executed, and HealthChecks is not pinged at all.
-    lock || exit 126
+    lock || { echo "Failed to get lock, exiting without executing command or pinging HealthChecks."; exit 126; }
   fi
 
   cleanup() {
@@ -91,14 +96,17 @@
   trap cleanup EXIT
 
   if [[ -v NICE ]]; then
+    echo "Command: nice -n ${NICE} ${CMD} $@"
     nice -n "${NICE}" "${CMD}" "$@" > "${TMP_LOG}" 2>&1
     RET=$?
   else
+    echo "Command: ${CMD} $@"
     "${CMD}" "$@" > "${TMP_LOG}" 2>&1
     RET=$?
   fi
-
-  CURL_ARGS="-fs --connect-timeout 5 -m 15 -o /dev/null -w %{http_code}"
+  echo "Return: ${RET}"
+  
+  CURL_ARGS="-fs --connect-timeout 5 -m 15 -w %{http_code}"
   if [[ -s "${TMP_LOG}" ]]; then
     CURL_CMD="timeout -k3 15s curl ${CURL_ARGS} --data-binary @${TMP_LOG}"
   else
@@ -108,8 +116,10 @@
   SECONDS=0
   while :; do
     for URL in ${PING_URLS}; do
+      echo "HealthChecks: ${CURL_CMD} ${URL}/${CHECK_ID}/${RET}"
       HC_CODE="$(${CURL_CMD} "${URL}/${CHECK_ID}/${RET}")"
       HC_RET=$?
+      echo "Return: ${HC_RET}, HTTP status: ${HC_CODE}"
 
       if [[ ${HC_RET} -eq 0 && "${HC_CODE}" == "200" ]]; then
         exit ${RET}
@@ -121,14 +131,24 @@
     fi
   done
 
+  # Failed to ping HealthChecks, try to save the log and log to syslog.
+  LOGGER="$(which logger)"
+  [[ $? -ne 0 ]] && unset LOGGER
+  LOGGER_CMD="${LOGGER} -t ${BASENAME}[$$]"
+
+  [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) ${CMD} $*: ${RET}"
   LOG_DIR="log/hc"
   LOG="$(basename "${CMD}")-${DATE}.log"
-  { cd && mkdir -p "${LOG_DIR}" && mv -- "${TMP_LOG}" "${LOG_DIR}/${LOG}"; } > /dev/null 2>&1
+  cd && mkdir -p "${LOG_DIR}" && mv -- "${TMP_LOG}" "${LOG_DIR}/${LOG}"
   if [[ $? -ne 0 ]]; then
-    logger "${BASENAME}: Failed to move log file to directory: ${LOG_DIR}" > /dev/null 2>&1
-    logger -f "${TMP_LOG}" > /dev/null 2>&1
+    mv -- "${TMP_LOG}" "/tmp/${LOG}"
+    if [[ $? -eq 0 ]]; then
+      [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) Failed to ping HealthChecks, command output log: /tmp/${LOG}"
+    else
+      [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) Failed to ping HealthChecks, failed to move command output log, discarded."
+    fi
   else
-    logger "${BASENAME}: Failed to ping HealthChecks, command output log: ${LOG_DIR}/${LOG}" > /dev/null 2>&1
+    [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) Failed to ping HealthChecks, command output log: ${LOG_DIR}/${LOG}"
   fi
 
   exit ${RET}
