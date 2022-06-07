@@ -7,7 +7,7 @@ umask 022
 
 DIR="$(dirname "$(realpath "$0")")"
 STAGEDIR="${DIR}/work"
-VERSION="$(date "+%Y%m%d-%H%M%S")"
+VERSION="$(date "+%Y%m%d.%H%M%S")-$(git rev-parse --short HEAD)"
 PKGDIR="${STAGEDIR}/arfycat-utils_${VERSION}_all"
 PKGSDIR="${DIR}/packages"
 
