@@ -112,7 +112,38 @@
     CURL_CMD="timeout -k3 15s curl ${CURL_ARGS}"
   fi
 
+  savelog() {
+    if [[ ! -f "${TMP_LOG}" ]]; then return 1; fi
+
+    USER="$(whoami)"
+    LOGGER="$(which logger)"
+    [[ $? -ne 0 ]] && unset LOGGER
+    LOGGER_CMD="${LOGGER} -t ${BASENAME}[$$]"
+    
+    [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) ${CMD} $*: ${RET}"
+    LOG_DIR="log/hc"
+    LOG="$(basename "${CMD}")-${DATE}.log"
+    cd && mkdir -p "${LOG_DIR}" && mv -- "${TMP_LOG}" "${LOG_DIR}/${LOG}"
+    if [[ $? -ne 0 ]]; then
+      mv -- "${TMP_LOG}" "/tmp/${LOG}"
+      if [[ $? -eq 0 ]]; then
+        [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) Failed to ping HealthChecks, command output log: /tmp/${LOG}"
+        echo "/tmp/${LOG}"
+        return 0
+      else
+        [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) Failed to ping HealthChecks, failed to move command output log, discarded."
+        rm -- "${TMP_LOG}"
+        return 1
+      fi
+    fi
+
+    [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) Failed to ping HealthChecks, command output log: ${LOG_DIR}/${LOG}"
+    echo "${LOG_DIR}/${LOG}"
+    return 0
+  }
+
   SECONDS=0
+  HC_CODE=
   while :; do
     for URL in ${PING_URLS}; do
       echo "HealthChecks: ${CURL_CMD} ${URL}/${CHECK_ID}/${RET}"
@@ -122,6 +153,17 @@
 
       if [[ ${HC_RET} -eq 0 && "${HC_CODE}" == "200" ]]; then
         exit ${RET}
+      elif [[ "${HC_CODE}" == "413" ]]; then
+        if [[ -f "${TMP_LOG}" ]]; then
+          SAVED_LOG="$(savelog)"; _R=$?
+          if [[ $_R -ne 0 ]]; then
+            RET=$_R
+            CURL_CMD="timeout -k3 15s curl ${CURL_ARGS}"
+          else
+            CURL_CMD="timeout -k3 15s curl ${CURL_ARGS} --data-raw ${SAVED_LOG}"
+          fi
+          break
+        fi
       fi
       
       sleep 0.1
@@ -132,26 +174,6 @@
     fi
   done
 
-  # Failed to ping HealthChecks, try to save the log and log to syslog.
-  USER="$(whoami)"
-  LOGGER="$(which logger)"
-  [[ $? -ne 0 ]] && unset LOGGER
-  LOGGER_CMD="${LOGGER} -t ${BASENAME}[$$]"
-
-  [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) ${CMD} $*: ${RET}"
-  LOG_DIR="log/hc"
-  LOG="$(basename "${CMD}")-${DATE}.log"
-  cd && mkdir -p "${LOG_DIR}" && mv -- "${TMP_LOG}" "${LOG_DIR}/${LOG}"
-  if [[ $? -ne 0 ]]; then
-    mv -- "${TMP_LOG}" "/tmp/${LOG}"
-    if [[ $? -eq 0 ]]; then
-      [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) Failed to ping HealthChecks, command output log: /tmp/${LOG}"
-    else
-      [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) Failed to ping HealthChecks, failed to move command output log, discarded."
-    fi
-  else
-    [[ -v LOGGER ]] && ${LOGGER_CMD} "(${USER}) Failed to ping HealthChecks, command output log: ${LOG_DIR}/${LOG}"
-  fi
-
+  savelog || RET=$?
   exit ${RET}
 }
