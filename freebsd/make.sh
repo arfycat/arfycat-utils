@@ -7,7 +7,7 @@
 
 DIR="$(dirname "$(realpath "$0")")"
 STAGEDIR="${DIR}/work"
-VERSION="$(date "+%Y%m%d.%H%M%S")-$(git rev-parse --short HEAD)"
+VERSION="$(date "+%Y%m%d.%H%M%S")_$(git rev-parse --short HEAD)"
 
 if [ -d "${STAGEDIR}" ]; then
   rm -rf -- "${STAGEDIR}" || exit $?
