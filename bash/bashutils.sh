@@ -218,7 +218,30 @@
     done
     return ${RET}
   }
-  
+
+  cmd() {
+    [[ $# -eq 0 ]] && fail 1 "cmdf(): Invalid arguments, usage: cmd <command> [arg1] ... [argN]"
+    if [[ -v DEBUG ]]; then echo "$@"; fi
+    "$@"
+    return $?
+  }
+
+  cmdf() {
+    [[ $# -lt 2 ]] && fail 1 "cmdf(): Invalid arguments, usage: cmdf <output file> <command> [arg1] ... [argN]"
+    local OUTFILE="$1"; shift
+    if [[ -v DEBUG ]]; then echo "$@"; fi
+    "$@" 2>&1 > "${OUTFILE}"
+    return $?
+  }
+
+  cmdv() {
+    [[ $# -lt 2 ]] && fail 1 "cmdv(): Invalid arguments, usage: cmdv <output variable> <command> [arg1] ... [argN]"
+    local -n OUTVAR="$1"; shift
+    if [[ -v DEBUG ]]; then echo "$@"; fi
+    OUTVAR="$("$@")"
+    return $?
+  }
+    
   [[ -v DEBUG ]] && env | sort
   return 0
 }
