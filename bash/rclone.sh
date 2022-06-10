@@ -108,7 +108,7 @@
 
   TMPLOG=; get_tmp_file TMPLOG
 
-  cmd () {
+  rclone-cmd() {
     local HEADER="$1"
     shift
    
@@ -117,33 +117,41 @@
 
     if ! cd ${DIR} &> /dev/null; then
       echo "${HEADER}"
-    echo "Failed to change directory: ${DIR}"
+      echo "Failed to change directory: ${DIR}"
       return 1
     fi
 
-    "$@" 2>&1 | { grep -Ev "^$|Making map for --track-renames|Finished making map for --track-renames|Waiting for checks to finish|Waiting for renames to finish|Waiting for transfers to finish|Waiting for deletions to finish|There was nothing to transfer" || true; } > ${TMPLOG}
+    [[ -v DEBUG ]] && echo "> rclone" "$@"
+    rclone "$@" 2>&1 | { grep --line-buffered -Ev "^$|Making map for --track-renames|Finished making map for --track-renames|Waiting for checks to finish|Waiting for renames to finish|Waiting for transfers to finish|Waiting for deletions to finish|There was nothing to transfer" || true; } > ${TMPLOG}
     RET=$?
-    [[ $RET -ne 0 || -s $TMPLOG ]] && { echo "${HEADER}"; echo "$@"; cat $TMPLOG; echo; }
+    [[ $RET -ne 0 || -s $TMPLOG ]] && { echo "${HEADER}"; cat $TMPLOG; echo; }
+    [[ -v DEBUG ]] && echo "= ${RET}"
     echo : > $TMPLOG
     return $RET
   }
 
   rclone-cleanup() {
-    cmd "Cleanup ${REMOTE}:${PREFIX}${DST}" "$HOME" rclone cleanup $RCLONE_ARGS --fast-list "$REMOTE:$PREFIX"
+    rclone-cmd "Cleanup ${REMOTE}:${PREFIX}${DST}" "$HOME" cleanup $RCLONE_ARGS --fast-list "$REMOTE:$PREFIX"
     return $?
   }
 
   rclone-sync() {
     if [[ ! -v DST ]]; then local DST="${SRC}"; fi
 
-    cmd "${SRC} -> ${REMOTE}:${PREFIX}${DST}" ${HOME} rclone sync ${RCLONE_ARGS} ${FILTER} --exclude-if-present .ignore --delete-excluded --create-empty-src-dirs --track-renames --fast-list -lc --transfers 16 --buffer-size 4M -v --stats-log-level DEBUG --stats-one-line "$@" "${SRC}" "${REMOTE}:${PREFIX}${DST}"
+    if [[ ! -v DEBUG ]]; then
+      local DEBUG_ARGS="--stats-log-level DEBUG"
+    else
+      local DEBUG_ARGS=
+    fi
+
+    rclone-cmd "${SRC} -> ${REMOTE}:${PREFIX}${DST}" ${HOME} sync ${RCLONE_ARGS} ${FILTER} --exclude-if-present .ignore --delete-excluded --create-empty-src-dirs --track-renames --fast-list -lc --transfers 16 --buffer-size 4M -v --stats-log-level DEBUG --stats-one-line "$@" "${SRC}" "${REMOTE}:${PREFIX}${DST}"
     return $?
   }
 
   rclone-lsr() {
     if [[ ! -v DST ]]; then local DST="/"; fi
 
-    cmd "ls ${REMOTE}:${PREFIX}${DST}" ${HOME} rclone ls ${RCLONE_ARGS} --fast-list "${REMOTE}:${PREFIX}${DST}"
+    rclone-cmd "ls ${REMOTE}:${PREFIX}${DST}" ${HOME} ls ${RCLONE_ARGS} --fast-list "${REMOTE}:${PREFIX}${DST}"
     return $?
   }
 
