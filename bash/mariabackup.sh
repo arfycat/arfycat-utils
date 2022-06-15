@@ -57,10 +57,10 @@
     DATE="$(date "+%Y%m%d-%H%M%S")"; [[ $? -ne 0 ]] && fail 1 "Failed to get date."
     if [[ -v COMPRESS ]]; then
       BACKUP="${BACKUPDIR}/backup-${DATE}.xb.xz"
-      mariabackup --backup --stream=xbstream | xz -9 -T0 > "${BACKUP}" || fail $? "Failed to create compressed XB file."
+      { mariabackup --backup --stream=xbstream | xz -9 -T0 > "${BACKUP}"; } |& { grep -vE ">> log scanned up to \([0-9]+\)" || true; } || fail $? "Failed to create compressed XB file."
     else
       BACKUP="${BACKUPDIR}/backup-${DATE}.xb"
-      mariabackup --backup --stream=xbstream > "${BACKUP}" || fail $? "Failed to create XB file."
+      { mariabackup --backup --stream=xbstream > "${BACKUP}"; } |& { grep -vE ">> log scanned up to \([0-9]+\)" || true; } || fail $? "Failed to create XB file."
     fi
   else
     local_cleanup() {
