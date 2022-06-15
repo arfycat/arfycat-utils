@@ -111,11 +111,13 @@
     shift
 
     if [[ ${UID} -eq 0 ]]; then
-      SHELL="${BASH}" su ${USER} -- "$(realpath "$0")" "$@"
-      exit $?
+      cleanup
+      SHELL="${BASH}" exec su ${USER} -- "$(realpath "$0")" "$@"
+      exit 255
     elif [[ $(whoami) != ${USER} ]]; then
       fail 1 "$0 must be run as ${USER}"
     fi
+    return 0
   }
 
   # lock(): Obtains an exclusive lock to ensure the script is only running once.
