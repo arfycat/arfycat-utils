@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-SMARTCTL="$(which smartctl)"
-if [[ $? -ne 0 ]]; then exit 1; fi
+SMARTCTL="$(which smartctl)"; _R=$?; [[ $_R -ne 0 ]] && exit $_R
 
 _lsblk() {
   if [[ "$(uname)" =~ ^Linux.* ]]; then
@@ -14,12 +13,25 @@ _lsblk() {
   fi
 }
 
-RET=0
-while read -r DEV; do
+_smartctl() {
+  local DEV="$1"
   echo '--------------------------------------------------------------------------------'
   echo "${DEV}"
   echo '--------------------------------------------------------------------------------'
   ${SMARTCTL} -x "/dev/${DEV}" || RET=$?
   echo
-done < <(_lsblk)
+}
+
+RET=0
+if [[ $# -gt 0 ]]; then
+  while [[ $# -ne 0 ]]; do
+    _smartctl "$1" || RET=$?
+    shift
+  done
+else
+  while read -r DEV; do
+    _smartctl "${DEV}" || RET=$?
+  done < <(_lsblk)
+fi
+
 exit ${RET}
