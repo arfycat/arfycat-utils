@@ -206,7 +206,7 @@ if [[ $? -eq 0 ]]; then
   echo '> smartctl'
   while read -r DEV; do
     echo "${DEV}:"
-    timeout 5s ${SMARTCTL} -AH -l error /dev/${DEV} | egrep -v '^(smartctl |Copyright |Host [a-zA-Z]+ Commands|Controller Busy Time|=== START)'
+    timeout 5s ${SMARTCTL} -iAH -l error /dev/${DEV} | egrep -v '^(smartctl |Copyright |Host [a-zA-Z]+ Commands|Controller Busy Time|=== START)'
   done < <(timeout 5s lsblk -nal -o name,type 2>/dev/null | grep " disk" | cut -d' ' -f1)
 fi
 
