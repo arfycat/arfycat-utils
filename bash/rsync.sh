@@ -16,7 +16,7 @@
   RSYNC_EXCLUDE_FILE="${DIR}/${NAME}-exclude.txt"
   RSYNC_FROM_FILE="${DIR}/${NAME}-from.txt"
   RSYNC_KEY="$(ssh -G "${NAME}" | awk '/^identityfile / { print $2 }')"; [[ $? -ne 0 ]] && fail 1 "Failed to determine identity file from SSH config."
-  OPTS="--chmod=D750,F640 --delete --delete-excluded --delete-after -rltzRi --compress-choice=lz4 --open-noatime --safe-links --timeout=1200 --outbuf=L"
+  OPTS="--chmod=D750,F640 --delete --delete-excluded --delete-after -rltzRi --compress-choice=lz4 --safe-links --timeout=1200 --outbuf=L"
   export RSYNC_RSH="sshpass -P '${RSYNC_KEY}' -f ${RSYNC_KEY}.txt ssh -T"
 
   if [[ -r "${RSYNC_EXCLUDE_FILE}" ]]; then
