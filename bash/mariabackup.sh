@@ -57,7 +57,7 @@
     DATE="$(date "+%Y%m%d-%H%M%S")"; [[ $? -ne 0 ]] && fail 1 "Failed to get date."
     if [[ -v COMPRESS ]]; then
       BACKUP="${BACKUPDIR}/backup-${DATE}.xb.xz"
-      { mariabackup --backup --stream=xbstream | xz -9 -T0 > "${BACKUP}"; } |& { grep -vE ">> log scanned up to \([0-9]+\)" || true; } || fail $? "Failed to create compressed XB file."
+      { mariabackup --backup --stream=xbstream | xz -9 -T0 > "${BACKUP}"; } |& { grep -vE -e ">> log scanned up to \([0-9]+\)" -e "DDL tracking : modify [0-9]+ .*" -e "Streaming .* to <STDOUT>" -e "Streaming .*\.ibd" -e "\.\.\.done" || true; } || fail $? "Failed to create compressed XB file."
     else
       BACKUP="${BACKUPDIR}/backup-${DATE}.xb"
       { mariabackup --backup --stream=xbstream > "${BACKUP}"; } |& { grep -vE ">> log scanned up to \([0-9]+\)" || true; } || fail $? "Failed to create XB file."
@@ -94,7 +94,7 @@
     mv -- "${TMPFILE}" "${BACKUP}" || fail $? "Failed to move backup file."
   fi
 
-  find "${BACKUPDIR}" -mtime +1 -type f -delete
+  find "${BACKUPDIR}" -mtime +2h -type f -delete
   ls -al "${BACKUPDIR}"
   exit $?
 }
