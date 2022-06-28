@@ -94,7 +94,12 @@
     mv -- "${TMPFILE}" "${BACKUP}" || fail $? "Failed to move backup file."
   fi
 
-  find "${BACKUPDIR}" -mtime +2h -type f -delete
+  if [[ "$(uname)" == "FreeBSD" ]]; then
+    find "${BACKUPDIR}" -mtime +2h -type f -delete
+  else
+    find "${BACKUPDIR}" -mtime 0.08333 -type f -delete
+  fi
+
   ls -al "${BACKUPDIR}"
   exit $?
 }
