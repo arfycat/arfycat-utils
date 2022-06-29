@@ -3,7 +3,7 @@
   umask 077
 
   usage() {
-    echo "Usage: $0 [-n <Nice>] [-t <Timeout Seconds>] <Check ID> <Command> [Arguments] ..."
+    echo "Usage: $0 [-n <Nice>] [-t <Timeout Seconds>] [-w <Lock Wait Time in Seconds] <Check ID> <Command> [Arguments] ..."
     exit 1
   }
 
@@ -20,6 +20,8 @@
   else
     PING_URLS="https://hc-ping.com"
   fi
+  
+  WAIT=0
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -30,6 +32,12 @@
       -n)
         [[ $# -lt 2 ]] && usage
         NICE="$2"
+        shift
+        shift
+        ;;
+      -w)
+        [[ $# -lt 2 ]] && usage
+        WAIT="$2"
         shift
         shift
         ;;
@@ -72,11 +80,17 @@
     fi
     exec 3> "${LOCK_FILE}"
 
-    flock -xn 3 || exit 0
+    if [[ $WAIT -gt 0 ]]; then
+      flock -x -w $WAIT 3
+      return $?
+    else
+      flock -xn 3
+      return $?
+    fi
   }
 
   BASENAME="$(basename "$0")"
-  if [[ "${BASENAME}" == "hcl" ]]; then
+  if [[ "${BASENAME}" == "hcl" || $WAIT -gt 0 ]]; then
     # If we can get the lock immediately, we proceed with the remaining logic.  Otherwise, lock will exit with 0, nothing
     # further gets executed, and HealthChecks is not pinged at all.
     lock || { echo "Failed to get lock, exiting without executing command or pinging HealthChecks."; exit 126; }
