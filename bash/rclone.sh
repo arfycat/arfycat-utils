@@ -7,15 +7,23 @@
   HOME="$(get_home)"; [[ $? -ne 0 ]] && fail 1 "Failed to locate home directory."
   if [[ ! -d "${HOME}" ]]; then fail 1 "Home directory does not exist: ${HOME}."; fi
 
-  ARGS="$@"
-  SCRIPT=$(basename $0)
-
   FILTER=
   SRC="/"
   RCLONE_ARGS=
+  
+  # Default options
+  CHECKSUM=
 
   while [[ $# -gt 0 ]]; do
     case $1 in
+      -c)
+        CHECKSUM=
+        shift
+        ;;
+      +c)
+        unset CHECKSUM
+        shift
+        ;;
       -r)
         REMOTE="$2"
         shift
@@ -121,12 +129,23 @@
       return 1
     fi
 
-    [[ -v DEBUG ]] && echo "> rclone" "$@"
-    rclone "$@" 2>&1 | { grep --line-buffered -Ev "^$|Making map for --track-renames|Finished making map for --track-renames|Waiting for checks to finish|Waiting for renames to finish|Waiting for transfers to finish|Waiting for deletions to finish|There was nothing to transfer" || true; } > ${TMPLOG}
-    RET=$?
-    [[ $RET -ne 0 || -s $TMPLOG ]] && { echo "${HEADER}"; cat $TMPLOG; echo; }
-    [[ -v DEBUG ]] && echo "= ${RET}"
     echo : > $TMPLOG
+    [[ -v DEBUG ]] && echo "> rclone" "$@"
+    rclone --error-on-no-transfer "$@" 2>&1 | {  grep --line-buffered -Ev "^$|Making map for --track-renames|Finished making map for --track-renames|Waiting for checks to finish|Waiting for renames to finish|Waiting for transfers to finish|Waiting for deletions to finish|There was nothing to transfer|Running all checks before starting transfers" || true; } > ${TMPLOG}
+    RET=$?
+    if [[ -v DEBUG ]]; then
+      echo "${HEADER}"
+      cat $TMPLOG
+      echo "= ${RET}"
+      echo
+    elif [[ $RET -eq 9 ]]; then
+      return 0
+    elif [[ $RET -ne 0 ]]; then
+      echo "${HEADER}"
+      cat $TMPLOG
+      echo
+    fi
+
     return $RET
   }
 
@@ -143,8 +162,11 @@
     else
       local DEBUG_ARGS=
     fi
+    
+    local RCLONE_SYNC_ARGS="-lv --delete-excluded --exclude-if-present .ignore --create-empty-src-dirs --track-renames --fast-list --transfers 32 --buffer-size 8M --stats-log-level DEBUG --stats-one-line"
+    [[ -v CHECKSUM ]] && RCLONE_SYNC_ARGS+=" -c"
 
-    rclone-cmd "${SRC} -> ${REMOTE}:${PREFIX}${DST}" ${HOME} sync ${RCLONE_ARGS} ${FILTER} --exclude-if-present .ignore --delete-excluded --create-empty-src-dirs --track-renames --fast-list -lc --transfers 16 --buffer-size 4M -v --stats-log-level DEBUG --stats-one-line "$@" "${SRC}" "${REMOTE}:${PREFIX}${DST}"
+    rclone-cmd "${SRC} -> ${REMOTE}:${PREFIX}${DST}" ${HOME} sync ${RCLONE_ARGS} ${RCLONE_SYNC_ARGS} ${FILTER} "$@" "${SRC}" "${REMOTE}:${PREFIX}${DST}"
     return $?
   }
 
