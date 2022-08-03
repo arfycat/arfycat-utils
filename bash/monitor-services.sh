@@ -22,18 +22,42 @@
   if [[ $# -eq 0 ]]; then
     fail 1 "Usage: $0 [-v] [--] <Service Name Regex 1> ... [Service Name Regex N]"
   fi
+  
+  check_service() {
+    local SERVICE="$1"
+
+    if [[ -v VERBOSE ]]; then
+      echo "${SERVICE}:"
+      local OUT="/dev/stdout"
+    else
+      local OUT="/dev/null"
+    fi
+
+    SECONDS=0
+    local RET=1
+    while [[ ${SECONDS} -le 60 ]]; do
+      service "${SERVICE}" status >& ${OUT}
+      RET=$?
+      if [[ ${RET} -eq 0 ]]; then
+        return 0
+      fi
+      
+      sleep 1
+    done
+    return $RET
+  }
 
   restart_service() {
     local SERVICE="$1"
     
     if [[ -v VERBOSE ]]; then
       echo "${SERVICE}:"
-      OUT="/dev/stdout"
+      local OUT="/dev/stdout"
     else
-      OUT="/dev/null"
+      local OUT="/dev/null"
     fi
     
-    if ! service "${SERVICE}" status > ${OUT} 2>&1; then
+    if ! check_service "${SERVICE}"; then
       echo "Restarting ${SERVICE}"
       service "${SERVICE}" restart || return $?
       echo
