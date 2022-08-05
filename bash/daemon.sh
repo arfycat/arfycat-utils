@@ -85,44 +85,49 @@
         exit 0
       fi
     elif [[ -f "${PAUSE}" ]]; then
-      PID="$(pgrep -U ${UID} "^${FILE}$")"
+      local PIDS="$(pgrep -U ${UID} "^${FILE}$")"
       if [[ $? -eq 0 ]]; then
-        STATE="$(ps -o state= "${PID}")"
-        if [[ $? -eq 0 ]]; then
-          if [[ "${STATE}" =~ "T" ]]; then
-            echo "OK: PAUSED"
-            exit 0
-          else
-            echo "ERROR: RUNNING"
-            exit 4
+        local STATE=
+        local STATE_TEXT="STOPPED"
+        for PID in $PIDS; do
+          STATE="$(ps -o state= ${PID})"
+          if [[ $? -eq 0 ]]; then
+            if [[ "${STATE}" =~ "T" ]]; then
+              STATE_TEXT="PAUSED"
+            else
+              echo "ERROR: RUNNING"
+              exit 4
+            fi
           fi
-        else
-          echo "OK: STOPPED"
-          exit 0
-        fi
+        done
+
+        echo "OK: ${STATE_TEXT}"
+        exit 0
       else
         echo "OK: STOPPED"
         exit 0
       fi
     else
-      PID="$(pgrep -U ${UID} "^${FILE}$")"
+      PIDS="$(pgrep -U ${UID} "^${FILE}$")"
       if [[ $? -ne 0 ]]; then
         echo "ERROR: STOPPED"
         exit 3
       else
-        STATE="$(ps -o state= "${PID}")"
-        if [[ $? -eq 0 ]]; then
-          if [[ "${STATE}" =~ "T" ]]; then
-            echo "ERROR: PAUSED"
-            exit 5
+        for PID in $PIDS; do
+          local STATE="$(ps -o state= "${PID}")"
+          if [[ $? -eq 0 ]]; then
+            if [[ "${STATE}" =~ "T" ]]; then
+              echo "ERROR: PAUSED"
+              exit 5
+            fi
           else
-            echo "OK: RUNNING"
-            exit 0
+            echo "ERROR: STOPPED"
+            exit 3
           fi
-        else
-          echo "ERROR: STOPPED"
-          exit 3
-        fi
+        done
+
+        echo "OK: RUNNING"
+        exit 0
       fi
     fi
 
