@@ -60,6 +60,32 @@
         shift
         shift
         ;;
+      --gz)
+        COMPRESS="gzip"
+        COMPRESS_EXT="gz"
+        COMPRESS_ARGS=()
+        shift
+        ;;
+      --gza)
+        COMPRESS="gzip"
+        COMPRESS_EXT="gz"
+        COMPRESS_ARGS+=("$2")
+        shift
+        shift
+        ;;
+      --lz4)
+        COMPRESS="lz4"
+        COMPRESS_EXT="lz4"
+        COMPRESS_ARGS=()
+        shift
+        ;;
+      --lz4a)
+        COMPRESS="lz4"
+        COMPRESS_EXT="lz4"
+        COMPRESS_ARGS+=("$2")
+        shift
+        shift
+        ;;
       --mtime)
         MTIME="$2"
         shift
