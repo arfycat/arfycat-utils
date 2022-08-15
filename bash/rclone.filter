@@ -15,6 +15,7 @@
 - .chia/**/db/
 - .chia/*/run/
 - .config/pulse/
+- .config/syncthing/index-*.db/
 - .dbus/
 - .duplicacy-web/stats/schedules/check.stats
 - .elementary/
