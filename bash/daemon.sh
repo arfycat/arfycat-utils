@@ -2,7 +2,7 @@
 {
   if ! PATH="${PATH}:/usr/local/share/arfycat:/usr/share/arfycat" source bashutils.sh; then echo Failed to source arfycat/bashutils.sh; exit 127; fi
   umask 007
-  set -o pipefail
+  set -uo pipefail
 
   usage() {
     fail 255 "Usage: $0 <User> <Working Directory> <Executable Path> [installed | pause | restart | restore (default) | resume | status | start | stop]"
@@ -47,14 +47,10 @@
   else
     ARGS=
   fi
-  
-  if [[ "$(uname)" == "FreeBSD" ]]; then
-    CONT_ARG="-CONT"
-    STOP_ARG="-STOP"
-  else
-    CONT_ARG="-CONT"
-    STOP_ARG="-STOP"
-  fi
+
+  UNAME="$(uname)"; _R=$?; [[ ${_R} -ne 0 ]] && fail "${_R}" "Failed to call uname."
+  CONT_ARG="-CONT"
+  STOP_ARG="-STOP"
 
   if [[ $# -ge 1 && "${1}" != "--" ]]; then CMD="$1"; shift; else CMD="restore"; fi
   case $CMD in
@@ -68,6 +64,28 @@
     *) usage; exit 255
   esac
   [[ $# -ge 1 && "${1}" == "--" ]] && shift
+  
+  daemon_stop() {
+    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
+    [[ $? -ne 0 ]] && { status; exit 255; }
+    echo "Stopping PID: ${PIDS}"
+    kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
+
+    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
+    [[ $? -ne 0 ]] && { status; exit 255; }
+    echo "Stopping PID: ${PIDS}"
+    kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
+    status; exit 255
+  }
+  
+  if [[ "${UNAME}" == "Linux" ]]; then
+    RUNLEVEL="$(runlevel | cut -d' ' -f2)"; _R=$?; [[ ${_R} -ne 0 ]] && fail "${_R}" "Failed to determine current runlevel."
+    if [[ "${RUNLEVEL}" == 0 || "${RUNLEVEL}" == "6" ]]; then
+      # Either shutdown or reboot.
+      echo "Stopping ${EXEC} due to runlevel: ${RUNLEVEL}."
+      daemon_stop; exit 255
+    fi
+  fi
 
   lock 360 "${EXEC}"
 
@@ -156,16 +174,7 @@
   esac
 
   if [[ -f "${STOP}" ]]; then
-    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
-    [[ $? -ne 0 ]] && { status; exit 255; }
-    echo "Stopping PID: ${PIDS}"
-    kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
-
-    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
-    [[ $? -ne 0 ]] && { status; exit 255; }
-    echo "Stopping PID: ${PIDS}"
-    kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
-    status; exit 255
+    daemon_stop; exit 255
   fi
 
   if [[ -f "${PAUSE}" ]]; then
