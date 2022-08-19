@@ -177,13 +177,10 @@
       local TIMEOUT="5"
     fi
     
-    START_TIME="$(date +%s)"
-    while :; do
+    SECONDS=0
+    while [[ ${SECONDS} -lt ${TIMEOUT} ]]; do
       kill "${PID}" > /dev/null 2>&1
       ps "${PID}" > /dev/null || return 0
-      if [[ $(($(date +%s) - ${START_TIME})) -gt ${TIMEOUT} ]]; then
-        break
-      fi
       sleep "0.1"
     done
 
@@ -209,9 +206,8 @@
       kill "${PID}" > /dev/null 2>&1
     done
 
-    START_TIME="$(date +%s)"
     for PID in ${PIDS}; do
-      kill_pid "${PID}" "$((${TIMEOUT} - $(date +%s) + ${START_TIME}))"
+      kill_pid "${PID}" "${TIMEOUT}"
     done
 
     RET=0
