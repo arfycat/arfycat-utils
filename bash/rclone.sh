@@ -144,6 +144,10 @@
       echo "${HEADER}"
       cat $TMPLOG
       echo
+    elif [[ -s "${TMPLOG}" ]]; then
+      echo "${HEADER}"
+      cat $TMPLOG
+      echo
     fi
 
     return $RET
