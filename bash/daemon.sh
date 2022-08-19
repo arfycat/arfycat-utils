@@ -79,11 +79,14 @@
   }
   
   if [[ "${UNAME}" == "Linux" ]]; then
-    RUNLEVEL="$(runlevel | cut -d' ' -f2)"; _R=$?; [[ ${_R} -ne 0 ]] && fail "${_R}" "Failed to determine current runlevel."
-    if [[ "${RUNLEVEL}" == 0 || "${RUNLEVEL}" == "6" ]]; then
-      # Either shutdown or reboot.
-      echo "Stopping ${EXEC} due to runlevel: ${RUNLEVEL}."
-      daemon_stop; exit 255
+    RUNLEVEL="$(runlevel | cut -d' ' -f2)"
+    if [[ $? -eq 0 ]]; then
+      # If we were able to determine the runlevel.  WSL does not have a runlevel.
+      if [[ "${RUNLEVEL}" == "0" || "${RUNLEVEL}" == "6" ]]; then
+        # Either shutdown or reboot.
+        echo "Stopping ${EXEC} due to runlevel: ${RUNLEVEL}."
+        daemon_stop; exit 255
+      fi
     fi
   fi
 
