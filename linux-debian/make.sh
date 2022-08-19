@@ -85,6 +85,7 @@ EOF
   cp "${DIR}/../bash/rclone-b2.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rocm-smi.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rsync.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/rsync-compare.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/smart-status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/sysrq-reboot.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
