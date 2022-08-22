@@ -20,7 +20,15 @@
   else
     PING_URLS="https://hc-ping.com"
   fi
-  
+
+  if [[ -r "${HOME}/.hc.p12" ]]; then
+    CLIENT_CERT="${HOME}/.hc.p12"
+  elif [[ -r "/usr/local/etc/hc.p12" ]]; then
+    CLIENT_CERT="/usr/local/etc/hc.p12"
+  elif [[ -r "/etc/hc.p12" ]]; then
+    CLIENT_CERT="/etc/hc.p12"
+  fi
+
   WAIT=0
 
   while [[ $# -gt 0 ]]; do
@@ -119,13 +127,6 @@
   fi
   echo "Return: ${RET}"
   
-  CURL_ARGS="-fs --connect-timeout 10 -m 15 -o /dev/null -w %{http_code}"
-  if [[ -s "${TMP_LOG}" ]]; then
-    CURL_CMD="timeout -k3 15s curl ${CURL_ARGS} --data-binary @${TMP_LOG}"
-  else
-    CURL_CMD="timeout -k3 15s curl ${CURL_ARGS}"
-  fi
-
   savelog() {
     if [[ ! -f "${TMP_LOG}" ]]; then return 1; fi
 
@@ -156,6 +157,16 @@
     return 0
   }
 
+  CURL_ARGS="-fs --connect-timeout 10 -m 20 -o /dev/null -w %{http_code}"
+  if [[ -v CLIENT_CERT ]]; then
+    CURL_ARGS+=" --cert-type P12 --cert ${CLIENT_CERT}"
+  fi
+
+  if [[ -s "${TMP_LOG}" ]]; then
+    CURL_ARGS+=" --data-binary @${TMP_LOG}"
+  fi
+
+  CURL_CMD="curl ${CURL_ARGS}"
   SECONDS=0
   HC_CODE=
   while :; do
@@ -179,7 +190,7 @@
           break
         fi
       fi
-      
+
       sleep 0.1
     done
 
