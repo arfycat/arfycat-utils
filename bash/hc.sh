@@ -158,19 +158,30 @@
   }
 
   CURL_ARGS="-fs --connect-timeout 10 -m 20 -o /dev/null -w %{http_code}"
-  if [[ -v CLIENT_CERT ]]; then
-    CURL_ARGS+=" --cert-type P12 --cert ${CLIENT_CERT}"
-  fi
-
   if [[ -s "${TMP_LOG}" ]]; then
     CURL_ARGS+=" --data-binary @${TMP_LOG}"
   fi
 
-  CURL_CMD="curl ${CURL_ARGS}"
   SECONDS=0
   HC_CODE=
   while :; do
     for URL in ${PING_URLS}; do
+      CURL_URL_ARGS=
+      if [[ "$URL" =~ ^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))? ]]; then
+        DOMAIN="${BASH_REMATCH[4]}"
+        if [[ -r "${HOME}/.config/hc/.${DOMAIN}.p12" ]]; then
+          CURL_URL_ARGS+=" --cert-type P12 --cert ${HOME}/.config/hc/${DOMAIN}.p12"
+        elif [[ -r "/usr/local/etc/hc/${DOMAIN}.p12" ]]; then
+          CURL_URL_ARGS+=" --cert-type P12 --cert /usr/local/etc/hc/${DOMAIN}.p12"
+        elif [[ -r "/etc/hc/${DOMAIN}.p12" ]]; then
+          CURL_URL_ARGS+=" --cert-type P12 --cert /etc/hc/${DOMAIN}.p12"
+        elif [[ -v CLIENT_CERT ]]; then
+          CURL_URL_ARGS+=" --cert-type P12 --cert ${CLIENT_CERT}"
+        fi
+      fi
+
+      CURL_CMD="curl ${CURL_ARGS} ${CURL_URL_ARGS}"
+    
       echo "HealthChecks: ${CURL_CMD} ${URL}/${CHECK_ID}/${RET}"
       HC_CODE="$(${CURL_CMD} "${URL}/${CHECK_ID}/${RET}")"
       HC_RET=$?
