@@ -13,6 +13,7 @@
   if [[ -v ARFYCAT_BASHUTILS ]]; then return 0; fi
   ARFYCAT_BASHUTILS="$(realpath "$BASH_SOURCE")"
 
+  CLEANUP_FUNCTIONS=()
   CLEANUP_FILES=()
   CLEANUP_DIRS=()
   WAIT_PIDS=()
@@ -27,8 +28,21 @@
     do
       rmdir -- "${CLEANUP_DIRS[$i]}"
     done
+
+    for (( i = 0; i < ${#CLEANUP_FUNCTIONS[@]}; i++ ));
+    do
+      ${CLEANUP_FUNCTIONS[$i]}
+    done
   }
   trap "{ cleanup; }" EXIT
+  
+  cleanup_add_function() {
+    while [[ $# -gt 0 ]];
+    do
+      CLEANUP_FUNCTIONS+=($1)
+      shift
+    done
+  }
 
   cleanup_add_file() {
     while [[ $# -gt 0 ]];
