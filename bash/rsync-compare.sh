@@ -3,7 +3,7 @@
   if ! PATH="${PATH}:/usr/local/share/arfycat:/usr/share/arfycat" source bashutils.sh; then echo Failed to source arfycat/bashutils.sh; exit 255; fi
   set -uo pipefail
   umask 077
-  
+
   set -e
   NAME="$1"; shift
   HOME="$(get_home)"
@@ -21,7 +21,16 @@
 
   lock
 
-  RSYNC="rsync -n --delete -crlziO --timeout=300 --outbuf=l --exclude-from=${EXCLUDE_FILE}"
+  cleanup-ssh-agent() {
+    eval $(ssh-agent -k) > /dev/null
+  }
+
+  if ! ssh-add -l >& /dev/null; then
+    cleanup_add_function cleanup-ssh-agent
+    eval $(ssh-agent -s -t 60) > /dev/null || fail $? "Failed to start SSH agent."
+  fi
+
+  RSYNC="rsync -n --delete -crlziO --timeout=600 --outbuf=l --exclude-from=${EXCLUDE_FILE}"
   if [[ -v DEBUG ]]; then RSYNC+=" --stats"; fi
 
   sync() {
@@ -30,18 +39,16 @@
     local LOCAL="$1"; shift
     local REMOTE="$1"; shift
 
-    if [[ -r "${HOME}/.ssh/${NAME}.txt" ]]; then
-      local SSH_CMD="sshpass -Ppassphrase -f'${HOME}/.ssh/${NAME}.txt' ssh"
-    else
-      local SSH_CMD="ssh"
-    fi
-
     echo "${HOST}:${REMOTE} -> ${LOCAL}"
     if ! cd "${LOCAL}" && du -hd0 "${LOCAL}"; then
        return $?
     fi
 
-    ${RSYNC} --rsh "${SSH_CMD}" "$@" "${HOST}:$(printf %q "${REMOTE}")/" "${LOCAL}/" \
+    if [[ -f "${HOME}/.ssh/${NAME}.txt" && -f "${HOME}/.ssh/${NAME}" ]]; then
+      timeout 5s sshpass -P "passphrase" -f "${HOME}/.ssh/${NAME}.txt" ssh-add -q "${HOME}/.ssh/${NAME}" || return $?
+    fi
+
+    ${RSYNC} "$@" "${HOST}:$(printf %q "${REMOTE}")/" "${LOCAL}/" \
       |& { grep -v -e "^$" \
                    -e "Number of created files: 0" \
                    -e "Number of deleted files: 0" \
@@ -50,9 +57,19 @@
                    -e "Literal data: 0 bytes" \
                    -e "Matched data: 0 bytes" \
                    -e " speedup is " || true; }; _R=$?
+    ssh-add -Dq
     echo
     return $_R
   }
+
+  RET=0
+  while read -r LINE; do
+    IFS='|' read -a COLS <<< "${LINE}" || fail $? "Failed to parse line: ${LINE}"
+    LOCAL="${COLS[0]}"
+    REMOTE="${COLS[1]}"
+    sync "${SYNC_KEY}" "${SYNC_HOST}" "${LOCAL}" "${REMOTE}" "$@" || RET=$?
+  done < "${HOME}/${NAME}.dirs"
+  exit $RET
 
   RET=0
   while read -r LINE; do
