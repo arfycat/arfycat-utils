@@ -3,7 +3,7 @@
   umask 077
 
   usage() {
-    echo "Usage: $0 [-n <Nice>] [-t <Timeout Seconds>] [-w <Lock Wait Time in Seconds] <Check ID> <Command> [Arguments] ..."
+    echo "Usage: $0 [-ct <Command Timeout in Seconds>] [-n <Nice>] [-p <Pause Between Attempts in Seconds>] [-r <Retries>] [-t <HealthChecks Timeout in Seconds>] [-w <Lock Wait Time in Seconds] <Check ID> <Command> [Arguments] ..."
     exit 1
   }
 
@@ -33,6 +33,12 @@
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
+      -ct)
+        [[ $# -lt 2 ]] && usage
+        CMD_TIMEOUT="$2"
+        shift
+        shift
+        ;;
       -d)
         DEBUG=
         shift
@@ -40,6 +46,18 @@
       -n)
         [[ $# -lt 2 ]] && usage
         NICE="$2"
+        shift
+        shift
+        ;;
+      -p)
+        [[ $# -lt 2 ]] && usage
+        PAUSE="$2"
+        shift
+        shift
+        ;;
+      -r)
+        [[ $# -lt 2 ]] && usage
+        RETRY="$2"
         shift
         shift
         ;;
@@ -69,7 +87,13 @@
   [[ ! -v DEBUG ]] && { exec 1>/dev/null; exec 2>/dev/null; }
 
   # Set a default TIMEOUT if not set.
-  [[ ! -v TIMEOUT ]] && TIMEOUT=50
+  [[ ! -v TIMEOUT || "${TIMEOUT}" -lt 0 ]] && TIMEOUT=50
+  
+  # No retries if not set.
+  [[ ! -v RETRY || "${RETRY}" -lt 0 ]] && RETRY=0
+
+  # Default pause of 1 second between attempts.
+  [[ ! -v PAUSE || "${PAUSE}" -lt 0 ]] && PAUSE=1
 
   DATE="$(date +%Y%m%d_%H%M%S)"
   CHECK_ID="$1"
@@ -88,7 +112,7 @@
     fi
     exec 3> "${LOCK_FILE}"
 
-    if [[ $WAIT -gt 0 ]]; then
+    if [[ -v WAIT && $WAIT -gt 0 ]]; then
       flock -x -w $WAIT 3
       return $?
     else
@@ -98,17 +122,18 @@
   }
 
   BASENAME="$(basename "$0")"
-  if [[ "${BASENAME}" == "hcl" || $WAIT -gt 0 ]]; then
+  if [[ "${BASENAME}" == "hcl" || -v WAIT ]]; then
     # If we can get the lock immediately, we proceed with the remaining logic.  Otherwise, lock will exit with 0, nothing
     # further gets executed, and HealthChecks is not pinged at all.
     lock || { echo "Failed to get lock, exiting without executing command or pinging HealthChecks."; exit 126; }
   fi
 
   cleanup() {
-    if [[ -v TMP_LOG ]]; then
+    if [[ -v TMP_LOG && -f "${TMP_LOG}" ]]; then
       rm -f -- "${TMP_LOG}"
     fi
-    if [[ -v LOCK_FILE ]]; then
+
+    if [[ -v LOCK_FILE && -f "${LOCK_FILE}" ]]; then
       rm -f -- "${LOCK_FILE}"
     fi
   }
@@ -116,17 +141,27 @@
   TMP_LOG="$(mktemp)"
   trap cleanup EXIT
 
-  if [[ -v NICE ]]; then
-    echo "Command: nice -n ${NICE} ${CMD} $@"
-    nice -n "${NICE}" "${CMD}" "$@" > "${TMP_LOG}" 2>&1
-    RET=$?
-  else
-    echo "Command: ${CMD} $@"
-    "${CMD}" "$@" > "${TMP_LOG}" 2>&1
-    RET=$?
+  CMD_PREFIX=
+  if [[ -v CMD_TIMEOUT && "${CMD_TIMEOUT}" != "0" ]]; then
+    CMD_PREFIX+=" timeout -k ${CMD_TIMEOUT} ${CMD_TIMEOUT}"
   fi
-  echo "Return: ${RET}"
-  
+
+  if [[ -v NICE ]]; then
+    CMD_PREFIX=" nice -n ${NICE}"
+  fi
+
+  RET=1
+  I=0
+  while [[ ${I} -le "${RETRY}" ]]; do
+    echo "Command:${CMD_PREFIX} ${CMD} $@"
+    ${CMD_PREFIX} "${CMD}" "$@" >& "${TMP_LOG}"
+    RET=$?
+    echo "Return: ${RET}"
+    [[ $RET -eq 0 ]] && break
+    ((++I))
+    if [[ ${PAUSE} -gt 0 ]]; then sleep "${PAUSE}" || break; fi
+  done
+
   savelog() {
     if [[ ! -f "${TMP_LOG}" ]]; then return 1; fi
 
