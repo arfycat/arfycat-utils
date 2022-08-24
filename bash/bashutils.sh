@@ -123,12 +123,21 @@
     [[ $# -eq 0 ]] && fail 1 "user(): Invalid arguments, missing username."
     local USER="$1"
     shift
-
-    if [[ ${UID} -eq 0 ]]; then
+    
+    local USER_UID="$(id -u "${USER}")"; local _R=$?
+    if [[ $_R -ne 0 ]]; then
+      fail $_R "Unknown user: ${USER}"
+    fi
+    
+    if [[ ${USER_UID} -eq ${UID} ]]; then
+      # Already running as the requested user.
+      return 0
+    elif [[ ${UID} -eq 0 ]]; then
+      # We are root and can try to become the requested user.
       cleanup
       SHELL="${BASH}" exec su ${USER} -- "$(realpath "$0")" "$@"
       exit 255
-    elif [[ $(whoami) != ${USER} ]]; then
+    elif [[ $(whoami) != ${USER} || ${UID} -ne ${USER_UID} ]]; then
       fail 1 "$0 must be run as ${USER}"
     fi
     return 0
