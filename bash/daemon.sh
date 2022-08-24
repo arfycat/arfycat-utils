@@ -7,6 +7,22 @@
   usage() {
     fail 255 "Usage: $0 <User> <Working Directory> <Executable Path> [installed | pause | restart | restore (default) | resume | status | start | stop]"
   }
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --any-user)
+        ANY_USER=
+        shift
+        ;;
+      --)
+        shift
+        break
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
   
   if [[ $# -lt 3 ]]; then usage; exit 255; fi
 
@@ -16,6 +32,12 @@
   
   [[ ! -v UID ]] && fail 255 "Missing shell variable UID."
   export HOST="$(hostname)"; [[ $? -ne 0 ]] && fail 255 "Failed determine hostname."
+  
+  if [[ -v ANY_USER ]]; then
+    PS_ARGS=()
+  else
+    PS_ARGS=("-U" "${UID}")
+  fi
 
   export USER_HOME="$(get_home "${USER}")"
   export DIR="$(realpath "${2}")"; _R=$?; [[ ${_R} -ne 0 ]] && fail "${_R}" "Failed to determine realpath: ${2}"
@@ -66,12 +88,12 @@
   [[ $# -ge 1 && "${1}" == "--" ]] && shift
   
   daemon_stop() {
-    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
+    PIDS="$(pgrep -d' ' -x "${PS_ARGS[@]}" "^${FILE}$")"
     [[ $? -ne 0 ]] && { status; exit 255; }
     echo "Stopping PID: ${PIDS}"
     kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
 
-    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
+    PIDS="$(pgrep -d' ' -x "${PS_ARGS[@]}" "^${FILE}$")"
     [[ $? -ne 0 ]] && { status; exit 255; }
     echo "Stopping PID: ${PIDS}"
     kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
@@ -98,7 +120,7 @@
   # 5: Should not be paused
   status() {
     if [[ -f "${STOP}" ]]; then
-      if pgrep -U ${UID} "^${FILE}$" > /dev/null; then
+      if pgrep "${PS_ARGS[@]}" "^${FILE}$" > /dev/null; then
         echo "ERROR: RUNNING"
         exit 2
       else
@@ -106,7 +128,7 @@
         exit 0
       fi
     elif [[ -f "${PAUSE}" ]]; then
-      local PIDS="$(pgrep -U ${UID} "^${FILE}$")"
+      local PIDS="$(pgrep "${PS_ARGS[@]}" "^${FILE}$")"
       if [[ $? -eq 0 ]]; then
         local STATE=
         local STATE_TEXT="STOPPED"
@@ -129,7 +151,7 @@
         exit 0
       fi
     else
-      PIDS="$(pgrep -U ${UID} "^${FILE}$")"
+      PIDS="$(pgrep "${PS_ARGS[@]}" "^${FILE}$")"
       if [[ $? -ne 0 ]]; then
         echo "ERROR: STOPPED"
         exit 3
@@ -181,41 +203,41 @@
   fi
 
   if [[ -f "${PAUSE}" ]]; then
-    pgrep -xU ${UID} "^${FILE}$" > /dev/null || { status; exit 255; }
-    pkill ${STOP_ARG} -xU ${UID} "^${FILE}$" > /dev/null || fail $? "Failed to pause existing ${FILE} processes."
+    pgrep -x "${PS_ARGS[@]}" "^${FILE}$" > /dev/null || { status; exit 255; }
+    pkill ${STOP_ARG} -x "${PS_ARGS[@]}" "^${FILE}$" > /dev/null || fail $? "Failed to pause existing ${FILE} processes."
     status; exit 255
   fi
 
   if [[ "${CMD}" == "restart" ]]; then
-    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
+    PIDS="$(pgrep -d' ' -x "${PS_ARGS[@]}" "^${FILE}$")"
     if [[ $? -eq 0 ]]; then
       echo "Stopping PID: ${PIDS}"
       kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
     fi
 
-    PIDS="$(pgrep -d' ' -xU ${UID} "^${FILE}$")"
+    PIDS="$(pgrep -d' ' -x "${PS_ARGS[@]}" "^${FILE}$")"
     if [[ $? -eq 0 ]]; then
       echo "Stopping PID: ${PIDS}"
       kill_procs "${PIDS}" 30 || fail $? "Failed to kill existing ${FILE} processes."
     fi
   fi
 
-  if pgrep -xU ${UID} "^${FILE}$" > /dev/null; then
-    pkill ${CONT_ARG} -xU ${UID} "^${FILE}$" > /dev/null || fail $? "Failed to resume existing ${FILE} processes."
+  if pgrep -x "${PS_ARGS[@]}" "^${FILE}$" > /dev/null; then
+    pkill ${CONT_ARG} -x "${PS_ARGS[@]}" "^${FILE}$" > /dev/null || fail $? "Failed to resume existing ${FILE} processes."
     status; exit 255
   fi
 
   if [[ -v NICE && "${NICE}" != "0" && "${NICE}" != "" ]]; then
-    nice "-n${NICE}" "${EXEC}" ${ARGS} "$@" > "${LOG}" 2>&1 &
+    nice "-n${NICE}" "${EXEC}" ${ARGS} "$@" >& "${LOG}" &
     RET=$?; PID=$!
   else
-    "${EXEC}" ${ARGS} "$@" > "${LOG}" 2>&1 &
+    "${EXEC}" ${ARGS} "$@" >& "${LOG}" &
     RET=$?; PID=$!
   fi
 
   if [[ ${RET} -ne 0 ]]; then fail ${RET} "Failed to start process: ${EXEC}" ${ARGS} "$@"; fi
   sleep 3
   ps -p ${PID} > /dev/null || fail $? "Process failed."
-  pgrep -d' ' -xU ${UID} "^${FILE}$" || fail $? "Process failed."
+  pgrep -d' ' -x "${PS_ARGS[@]}" "^${FILE}$" || fail $? "Process failed."
   status; exit 255
 }
