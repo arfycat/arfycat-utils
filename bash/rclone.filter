@@ -17,6 +17,7 @@
 - .config/pulse/
 - .config/syncthing/index-*.db/
 - .dbus/
+- .DS_Store
 - .duplicacy-web/stats/schedules/check.stats
 - .elementary/
 - .git/
@@ -38,6 +39,7 @@
 - cache/
 - chia-blockchain/
 - chia-plotter/
+- desktop.ini
 - hass/bin/
 - hass/git/
 - hass/include/
@@ -51,10 +53,14 @@
 - log/
 - logs/
 - notracking/
+- NTUSER.DAT*
+- ntuser.dat*
+- ntuser.ini
 - plot/madmax/
 - ports/*/*/work/
 - snap/
 - ssh/moduli
+- Thumbs.db
 - tmp/
 - wplr-tmp/
 - wpmc-trash/
