@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
-# mkdir /usr/local/share/arfycat
-# chmod 755 /usr/local/share/arfycat
-# chmod 755 /usr/local/share/arfycat/bashutils.sh
-# if ! source /usr/local/share/arfycat/bashutils.sh; then echo Failed to source arfycat/bashutils.sh; exit 255; fi
+# if ! PATH="${PATH}:/usr/local/share/arfycat:/usr/share/arfycat" source bashutils.sh; then echo "Failed to source arfycat/bashutils.sh"; exit 255; fi
 {
-  set -o nounset
+  set -u
 
   # Script must be sourced.
   if [[ "$BASH_SOURCE" == "$0" ]]; then return 1; fi
@@ -261,6 +258,33 @@
     if [[ -v DEBUG ]]; then echo "$@"; fi
     OUTVAR="$("$@")"
     return $?
+  }
+
+  cleanup-ssh-agent() {
+    eval $(ssh-agent -k) > /dev/null
+  }
+
+  get-ssh-agent() {
+    ssh-add -l >& /dev/null
+    if [[ $? -eq 2 ]] ; then
+      cleanup_add_function cleanup-ssh-agent
+      eval $(ssh-agent -s -t 60) > /dev/null || return $?
+    fi
+
+    return 0
+  }
+
+  ssh-agent-add() {
+    [[ $# -lt 2 ]] && fail 1 "ssh-agent-add(): Invalid arguments, usage: ssh-agent-add <identity file> <passphrase file> [identity lifetime in seconds]"
+    get-ssh-agent || return $?
+
+    local SSH_ADD_ARGS=("-q")
+    if [[ $# -ge 3 ]]; then
+      SSH_ADD_ARGS+=("-t")
+      SSH_ADD_ARGS+=("$3")
+    fi
+
+    timeout -k 1 5 sshpass -P "passphrase" -f "$2" ssh-add "${SSH_ADD_ARGS[@]}" "$1" || return $?
   }
     
   [[ -v DEBUG ]] && env | sort
