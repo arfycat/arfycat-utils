@@ -21,15 +21,6 @@
 
   lock
 
-  cleanup-ssh-agent() {
-    eval $(ssh-agent -k) > /dev/null
-  }
-
-  if ! ssh-add -l >& /dev/null; then
-    cleanup_add_function cleanup-ssh-agent
-    eval $(ssh-agent -s -t 60) > /dev/null || fail $? "Failed to start SSH agent."
-  fi
-
   RSYNC="rsync -n --delete -crlziO --timeout=600 --outbuf=l --exclude-from=${EXCLUDE_FILE}"
   if [[ -v DEBUG ]]; then RSYNC+=" --stats"; fi
 
@@ -45,7 +36,7 @@
     fi
 
     if [[ -f "${HOME}/.ssh/${NAME}.txt" && -f "${HOME}/.ssh/${NAME}" ]]; then
-      timeout 5s sshpass -P "passphrase" -f "${HOME}/.ssh/${NAME}.txt" ssh-add -q "${HOME}/.ssh/${NAME}" || return $?
+      ssh-agent-add "${HOME}/.ssh/${NAME}" "${HOME}/.ssh/${NAME}.txt" 10 || return $?
     fi
 
     ${RSYNC} "$@" "${HOST}:$(printf %q "${REMOTE}")/" "${LOCAL}/" \
@@ -57,7 +48,7 @@
                    -e "Literal data: 0 bytes" \
                    -e "Matched data: 0 bytes" \
                    -e " speedup is " || true; }; _R=$?
-    ssh-add -Dq
+    ssh-add -qd "${HOME}/.ssh/${NAME}"
     echo
     return $_R
   }
