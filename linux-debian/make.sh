@@ -76,6 +76,7 @@ EOF
 
   cp "${DIR}/../bash/apt-updates.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/bashutils.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/cron.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/cron-status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/daemon.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/hc.sh" "${PKGDIR}/usr/bin/hc" || exit $?
@@ -90,13 +91,14 @@ EOF
   cp "${DIR}/../bash/rocm-smi.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rsync.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rsync-compare.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/rsyslogd.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/smart-status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/sysrq-reboot.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/wsl-init.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/zfs-snapshot.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../vim/.vimrc" "${PKGDIR}/etc/vim/vimrc.local" || exit $?
-  
+
   ln -s "hc" "${PKGDIR}/usr/bin/hcl" || exit $?
 
   sudo chown -R root:root "${PKGDIR}" || exit $?
