@@ -11,6 +11,10 @@ VERSION="$(date "+%Y%m%d.%H%M%S")-$(git rev-parse --short HEAD)"
 PKGDIR="${STAGEDIR}/arfycat-utils_${VERSION}_all"
 PKGSDIR="${DIR}/packages"
 
+clean() {
+  rm -rf -- "${STAGEDIR}"
+}
+
 repo() {
   if [[ ! -d "${PKGSDIR}" ]]; then
     mkdir "${PKGSDIR}" || return $?
@@ -104,7 +108,10 @@ if [[ $# -ge 1 && "$1" == "repo" ]]; then
   repo; exit $?
 elif [[ $# -ge 1 && "$1" == "package" ]]; then
   package; exit $?
+elif  [[ $# -ge 1 && "$1" == "clean" ]]; then
+  clean; exit $?
 else
   package || exit $?
-  repo; exit $?
+  repo || exit $?
+  clean || exit $?
 fi
