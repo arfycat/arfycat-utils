@@ -48,7 +48,7 @@
                    -e "Literal data: 0 bytes" \
                    -e "Matched data: 0 bytes" \
                    -e " speedup is " || true; }; _R=$?
-    ssh-add -qd "${HOME}/.ssh/${NAME}"
+    ssh-add -qd "${HOME}/.ssh/${NAME}" >& /dev/null # This will possibly fail due to maximum key lifetime.
     echo
     return $_R
   }
