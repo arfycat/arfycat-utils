@@ -12,7 +12,7 @@ PKGDIR="${STAGEDIR}/arfycat-utils_${VERSION}_all"
 PKGSDIR="${DIR}/packages"
 
 clean() {
-  rm -rf -- "${STAGEDIR}"
+  sudo rm -rf -- "${STAGEDIR}"
 }
 
 repo() {
