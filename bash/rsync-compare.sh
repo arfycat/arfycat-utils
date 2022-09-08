@@ -19,9 +19,9 @@
     fail $? "Failed to read exclude file: ${EXCLUDE_FILE}"
   fi
 
-  lock
+  lock 0 "${NAME}"
 
-  RSYNC="rsync -n --delete -crlziO --timeout=600 --outbuf=l --exclude-from=${EXCLUDE_FILE}"
+  RSYNC="rsync -n --delete -crlziO --timeout=1800 --stderr=all --outbuf=l --exclude-from=${EXCLUDE_FILE}"
   if [[ -v DEBUG ]]; then RSYNC+=" --stats"; fi
 
   sync() {
