@@ -13,18 +13,19 @@
 
   while :; do
     date
-    if [[ -f /etc/init.d/rsyslog ]]; then
-      service rsyslog status || service rsyslog restart || exit $?
-    else
-      /usr/share/arfycat/rsyslogd.sh || exit $?
+    if [[ -r /etc/wsl-services ]]; then
+      while read SERVICE; do
+        if [[ -x "/etc/init.d/${SERVICE}" ]]; then
+          service "${SERVICE}" status || service "${SERVICE}" restart || exit $?
+        elif [[ -x "/usr/share/arfycat/${SERVICE}.sh" ]]; then
+          "/usr/share/arfycat/${SERVICE}.sh" || exit $?
+        else
+          fail 1 "Failed to locate script for service: ${SERVICE}"
+        fi
+      done < /etc/wsl-services
+      WSL_SERVICES="$(cat /etc/wsl-services)"
     fi
-
-    if [[ -f /etc/init.d/cron ]]; then
-      service cron status || service cron restart || exit $?
-    else
-      /usr/share/arfycat/cron.sh || exit $?
-    fi
-    sleep 300
+    sleep 293
   done
   exit 0
 }
