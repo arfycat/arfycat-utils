@@ -2,8 +2,12 @@
 {
   source /usr/share/arfycat/bashutils.sh || { echo Failed to source arfycat/bashutils.sh; exit 255; }
   
-  if [[ ! -r /sys/class/power_supply/ADP1/online ]]; then
-    fail 1 "Cannot read power supply online status: /sys/class/power_supply/ADP1/online"
+  if [[ -r /sys/class/power_supply/ADP1/online ]]; then
+    PS_FILE="/sys/class/power_supply/ADP1/online"
+  elif [[ -r /sys/class/power_supply/AC/online ]]; then
+    PS_FILE="/sys/class/power_supply/AC/online"
+  else
+    fail 1 "Failed to locate power supply online status file."
   fi
 
   lock
@@ -38,7 +42,7 @@
     lsusb -v > /dev/null
     sleep 5
 
-    if [[ $(cat /sys/class/power_supply/ADP1/online) != "1" ]]; then
+    if [[ $(cat "${PS_FILE}") != "1" ]]; then
       SUSPENDED=
       suspend
     else
