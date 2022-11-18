@@ -83,6 +83,7 @@ EOF
   cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/" || exit $?
   cp "${DIR}/../bash/mail-test.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/manage-mining.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/manage-power.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/mariabackup.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rclone.filter" "${PKGDIR}/etc/" || exit $?
   cp "${DIR}/../bash/rclone.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
