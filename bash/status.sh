@@ -2,6 +2,8 @@
 {
   if ! PATH="${PATH}:/usr/local/share/arfycat:/usr/share/arfycat" source bashutils.sh; then echo Failed to source arfycat/bashutils.sh; exit 255; fi
   PATH="${PATH}:/usr/local/sbin:/usr/sbin:/sbin"
+  
+  RET=0
 
   if [[ $(uname) == "Linux" ]]; then
     LINUX=
@@ -69,14 +71,14 @@
 
   wait_pids
 
-  echo $(date "+%Y-%m-%d") $(uptime)
-  uname -v
+  echo "$(date "+%Y-%m-%d") $(uptime)"
+  uname -v || RET=$?
   echo
 
   UPRECORDS="$(which uprecords)"
   if [[ $? -eq 0 ]]; then
     echo '> uprecords'
-    ${UPRECORDS} -w -a
+    ${UPRECORDS} -w -a || RET=$?
     echo
   fi
 
@@ -90,14 +92,14 @@
 
   APCACCESS="$(which apcaccess)"
   if [[ $? -eq 0 ]]; then
-    ${APCACCESS}
+    "${APCACCESS}" || RET=$?
     echo
   fi
 
   WG="$(which wg)"
   if [[ $? -eq 0 ]]; then
     echo '> wg'
-    "${WG}"
+    "${WG}" || RET=$?
     echo
   fi
 
@@ -106,9 +108,9 @@
 
   echo '> df'
   if [[ -v LINUX ]]; then
-    timeout 10s df -hTx tmpfs
+    timeout 10s df -hTx tmpfs || RET=$?
   else
-    timeout 10s df -hTt nonullfs,linprocfs,devfs,tmpfs,fdescfs,linsysfs,procfs,zfs
+    timeout 10s df -hTt nonullfs,linprocfs,devfs,tmpfs,fdescfs,linsysfs,procfs,zfs || RET=$?
   fi
   echo
 
@@ -122,28 +124,28 @@
 
   if [[ -x /home/flexfarmer/flexfarmer.sh ]]; then
     echo '> flexfarmer'
-    timeout 10s /home/flexfarmer/flexfarmer.sh status
+    timeout 10s /home/flexfarmer/flexfarmer.sh status || RET=$?
     [[ -r /home/flexfarmer/log/flexfarmer.log ]] && grep eligible /home/flexfarmer/log/flexfarmer.log | tail -10 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^.* elapsed=/elapsed=/'
     echo
   fi
 
   if [[ -x /home/phoenixminer/phoenixminer.sh ]]; then
     echo '> phoenixminer'
-    timeout 10s /home/phoenixminer/phoenixminer.sh status
+    timeout 10s /home/phoenixminer/phoenixminer.sh status || RET=$?
     [[ -r /home/phoenixminer/log/PhoenixMiner.log ]] && tail -1000 /home/phoenixminer/log/PhoenixMiner.log | grep 'Eth speed' | tail -1 | sed 's/\x1b\[[0-9;]*m//g'
     echo
   fi
 
   if [[ -x /home/lolminer/lolminer.sh ]]; then
     echo '> lolminer'
-    timeout 10s /home/lolminer/lolminer.sh status
+    timeout 10s /home/lolminer/lolminer.sh status || RET=$?
     [[ -r /home/lolminer/log/lolMiner.log ]] && tail -100 /home/lolminer/log/lolMiner.log | grep 'Average speed' | tail -2 | sed 's/\x1b\[[0-9;]*m//g'
     echo
   fi
 
   if [[ -x /home/raptoreum/cpuminer-gr-avx2.sh ]]; then
     echo '> cpuminer-gr-avx2'
-    timeout 10s /home/raptoreum/cpuminer-gr-avx2.sh status
+    timeout 10s /home/raptoreum/cpuminer-gr-avx2.sh status || RET=$?
     [[ -r /home/raptoreum/log/cpuminer-gr-avx2.log ]] && grep -a "Hashrate" /home/raptoreum/log/cpuminer-gr-avx2.log | tail -10 | sed 's/\x1b\[[0-9;]*m//g'
     echo
   fi
@@ -151,14 +153,14 @@
   ZPOOL="$(which zpool)"
   if [[ $? -eq 0 ]]; then
     echo '> zpool status'
-    timeout 10s ${ZPOOL} status
+    timeout 10s ${ZPOOL} status || RET=$?
     echo
   fi
 
   ZFS="$(which zfs)"
   if [[ $? -eq 0 ]]; then
     echo '> zfs list'
-    timeout 10s ${ZFS} list
+    timeout 10s ${ZFS} list || RET=$?
     echo
   fi
 
@@ -166,7 +168,7 @@
     ROCM_SMI="$(find /opt -wholename "/opt/rocm-*/bin/rocm-smi")"
     if [[ $? -eq 0 && "${ROCM_SMI}" != "" && -x "${ROCM_SMI}" ]]; then
       echo '> rocm-smi'
-      timeout 10s su -m nobody -c "${ROCM_SMI}" 2>&1 | sed '/^[[:space:]]*$/d'
+      timeout 10s su -m nobody -c "${ROCM_SMI}" 2>&1 | sed '/^[[:space:]]*$/d' || RET=$?
       echo
     fi
   fi
@@ -174,41 +176,68 @@
   NVIDIA_SMI="$(which nvidia-smi)"
   if [ $? -eq 0 ]; then
     echo '> nvidia-smi'
-    timeout 10s su -m nobody -c "${NVIDIA_SMI}"
+    timeout 10s su -m nobody -c "${NVIDIA_SMI}" || RET=$?
     echo
   fi
 
   HWSTAT="$(which hwstat)"
   if [[ $? -eq 0 ]]; then
     echo '> hwstat'
-    timeout 10s ${HWSTAT}
+    timeout 10s ${HWSTAT} || RET=$?
     echo
   fi
 
   SENSORS="$(which sensors)"
   if [[ $? -eq 0 ]]; then
     echo '> sensors'
-    timeout 10s ${SENSORS}
+    timeout 10s ${SENSORS} || RET=$?
     #echo
   fi
 
   MBMON="$(which mbmon)"
   if [[ $? -eq 0 ]]; then
-    timeout 10s ${MBMON} -c1 -r
+    timeout 10s ${MBMON} -c1 -r || RET=$?
     echo
+  fi
+
+  IOCAGE="$(which iocage)"
+  if [[ $? -eq 0 ]]; then
+    echo '> iocage list'
+    timeout 20s ${IOCAGE} list -l || RET=$?
+    echo
+  fi
+  
+  VM="$(which vm)"
+  if [[ $? -eq 0 ]]; then
+    echo '> vm list'
+    ${VM} list -l || RET=$?
+    echo
+  fi
+  
+  DOCKER="$(which docker)"
+  if [[ $? -eq 0 ]]; then
+    echo '> docker compose ls'
+    ${DOCKER} compose ls || RET=$?
+    echo
+  fi
+
+  VIRSH="$(which virsh)"
+  if [[ $? -eq 0 ]]; then
+    echo '> virsh list'
+    ${VIRSH} list || RET=$?
   fi
 
   LSUSB="$(which lsusb)"
   if [[ $? -eq 0 && -e /sys/bus/usb/devices ]]; then
     echo '> lsusb'
-    timeout 10s ${LSUSB} -t
+    timeout 10s ${LSUSB} -t || RET=$?
     echo
   fi
 
   LSBLK="$(which lsblk)"
   if [[ $? -eq 0 && -e /sys/dev/block ]]; then
     echo '> lsblk'
-    timeout 10s ${LSBLK}
+    timeout 10s ${LSBLK} || RET=$?
     echo
   fi
 
@@ -231,5 +260,5 @@
     fi
   fi
 
-  exit 0
+  exit $RET
 }
