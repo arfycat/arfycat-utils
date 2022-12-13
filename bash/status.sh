@@ -210,7 +210,7 @@
   VM="$(which vm)"
   if [[ $? -eq 0 ]]; then
     echo '> vm list'
-    ${VM} list -l || RET=$?
+    ${VM} list || RET=$?
     echo
   fi
   
