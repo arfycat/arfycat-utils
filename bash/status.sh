@@ -160,7 +160,7 @@
   ZFS="$(which zfs)"
   if [[ $? -eq 0 ]]; then
     echo '> zfs list'
-    timeout 10s ${ZFS} list || RET=$?
+    timeout 20s ${ZFS} list || RET=$?
     echo
   fi
 
