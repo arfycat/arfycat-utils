@@ -47,6 +47,14 @@
     NSUPDATE="$(which nsupdate)"
   fi
 
+  CURL_ARGS=()
+  if [[ $OSTYPE == "FreeBSD" || $OSTYPE == "freebsd"* ]]; then
+    :
+  else
+    CURL_ARGS+=("--dns-servers")
+    CURL_ARGS+=("$RSERVER:$RPORT")
+  fi
+
   _query() {
     local TYPE="$1"
     local HOST="$2"
@@ -130,7 +138,7 @@ EOF
     if [[ -v IPV4 ]]; then
       IP_URL_E_IP4=; _query A "$IP_URL_E_HOST" IP_URL_E_IP4
       if [[ $IP_URL_E_IP4 =~ $IPV4_RE ]]; then
-        EIPV4="$(curl --dns-servers $RSERVER:$RPORT -s4 --resolve "$IP_URL_E_HOST:443:$IP_URL_E_IP4" "$IP_URL_E")" || true
+        EIPV4="$(curl "${CURL_ARGS[@]}" -s4 --resolve "$IP_URL_E_HOST:443:$IP_URL_E_IP4" "$IP_URL_E")" || true
         if [[ $EIPV4 =~ $IPV4_RE ]]; then
           _nsupdate A $EIPV4 $HOST_E $HOST_E
         fi
@@ -140,7 +148,7 @@ EOF
     if [[ -v IPV6 ]]; then
       IP_URL_E_IP6=; _query AAAA "$IP_URL_E_HOST" IP_URL_E_IP6
       if [[ $IP_URL_E_IP6 =~ $IPV6_RE ]]; then
-        EIPV6="$(curl --dns-servers $RSERVER:$RPORT -s6 --resolve "$IP_URL_E_HOST:443:$IP_URL_E_IP6" "$IP_URL_E")" || true
+        EIPV6="$(curl "${CURL_ARGS[@]}" -s6 --resolve "$IP_URL_E_HOST:443:$IP_URL_E_IP6" "$IP_URL_E")" || true
         if [[ $EIPV6 =~ $IPV6_RE ]]; then
           _nsupdate AAAA $EIPV6 $HOST_E $HOST_E
         fi
@@ -154,7 +162,7 @@ EOF
     if [[ -v IPV4 ]]; then
       IP_URL_I_IP4=; _query A "$IP_URL_I_HOST" IP_URL_I_IP4
       if [[ $IP_URL_I_IP4 =~ $IPV4_RE ]]; then
-        IIPV4="$(curl --dns-servers $RSERVER:$RPORT -s4 --resolve "$IP_URL_I_HOST:443:$IP_URL_I_IP4" "$IP_URL_I")" || true
+        IIPV4="$(curl "${CURL_ARGS[@]}" -s4 --resolve "$IP_URL_I_HOST:443:$IP_URL_I_IP4" "$IP_URL_I")" || true
         if [[ $IIPV4 =~ $IPV4_RE ]]; then
           _nsupdate A $IIPV4 $HOST_I $HOST_I
         fi
@@ -164,7 +172,7 @@ EOF
     if [[ -v IPV6 ]]; then
       IP_URL_I_IP6=; _query AAAA "$IP_URL_I_HOST" IP_URL_I_IP6
       if [[ $IP_URL_I_IP6 =~ $IPV6_RE ]]; then
-        IIPV6="$(curl --dns-servers $RSERVER:$RPORT -s6 --resolve "$IP_URL_I_HOST:443:$IP_URL_I_IP6" "$IP_URL_I")" || true
+        IIPV6="$(curl "${CURL_ARGS[@]}" -s6 --resolve "$IP_URL_I_HOST:443:$IP_URL_I_IP6" "$IP_URL_I")" || true
         if [[ $IIPV6 =~ $IPV6_RE ]]; then
           _nsupdate AAAA $IIPV6 $HOST_I $HOST_I
         fi
