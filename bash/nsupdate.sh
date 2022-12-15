@@ -4,7 +4,6 @@
   set -euo pipefail
   umask 077
 
-  user meow "$@"
   lock
 
   . $HOME/nsupdate.env || fail $? "Failed to source nsupdate.env file."
