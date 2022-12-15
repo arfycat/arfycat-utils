@@ -64,7 +64,7 @@
       VAR="$(dig +short -r -t $TYPE -p $RPORT @$RSERVER $HOST)" || true
     elif [[ -v DRILL ]]; then
       # The FreeBSD drill doesn't have the short option yet.
-      VAR="$(drill -p $RPORT $HOST @$RSERVER $TYPE | grep -Ev '^;;|^$|SOA' | cut -w -f5)"
+      VAR="$(drill -p $RPORT $HOST @$RSERVER $TYPE | grep -Ev '^;;|^$|SOA' | cut -w -f5)" || true
     else
       exit 1 "No supported DNS client."
     fi
@@ -84,7 +84,7 @@
       VAR="$(dig +norecurse +short -r -t $TYPE -p $PORT @$SERVER $HOST)" || true
     elif [[ -v DRILL ]]; then
       # The FreeBSD drill doesn't have the short option yet.
-      VAR="$(drill -o rd -p $PORT $HOST @$SERVER $TYPE | grep -Ev '^;;|^$|SOA' | cut -w -f5)"
+      VAR="$(drill -o rd -p $PORT $HOST @$SERVER $TYPE | grep -Ev '^;;|^$|SOA' | cut -w -f5)" || true
     else
       exit 1 "No supported DNS client."
     fi
