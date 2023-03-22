@@ -39,7 +39,7 @@
       ssh-agent-add "${HOME}/.ssh/${NAME}" "${HOME}/.ssh/${NAME}.txt" 10 || return $?
     fi
 
-    ${RSYNC} "$@" "${HOST}:$(printf %q "${REMOTE}")/" "${LOCAL}/" \
+    ${RSYNC} "$@" "${HOST}:${REMOTE}/" "${LOCAL}/" \
       |& { grep -v -e "^$" \
                    -e "Number of created files: 0" \
                    -e "Number of deleted files: 0" \
