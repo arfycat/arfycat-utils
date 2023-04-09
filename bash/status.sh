@@ -153,14 +153,14 @@
   ZPOOL="$(which zpool)"
   if [[ $? -eq 0 ]]; then
     echo '> zpool status'
-    timeout 10s ${ZPOOL} status || RET=$?
+    timeout 30s ${ZPOOL} status || RET=$?
     echo
   fi
 
   ZFS="$(which zfs)"
   if [[ $? -eq 0 ]]; then
     echo '> zfs list'
-    timeout 20s ${ZFS} list || RET=$?
+    timeout 60s ${ZFS} list || RET=$?
     echo
   fi
 
