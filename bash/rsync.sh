@@ -16,7 +16,7 @@
   RSYNC_EXCLUDE_FILE="${DIR}/${NAME}-exclude.txt"
   RSYNC_FROM_FILE="${DIR}/${NAME}-from.txt"
   RSYNC_KEY="$(ssh -G "${NAME}" | awk '/^identityfile / { print $2 }')"; [[ $? -ne 0 ]] && fail 1 "Failed to determine identity file from SSH config."
-  OPTS="--chmod=D750,F640 --delete --delete-excluded --delete-after -rltzRi --compress-choice=lz4 --safe-links --timeout=1200 --outbuf=L"
+  OPTS="--delete --delete-after -rltzRi --fsync --compress-choice=lz4 --safe-links --timeout=1600 --outbuf=L"
   export RSYNC_RSH="sshpass -P '${RSYNC_KEY}' -f ${RSYNC_KEY}.txt ssh -T"
 
   if [[ -r "${RSYNC_EXCLUDE_FILE}" ]]; then
@@ -41,21 +41,32 @@
 
     SRC="$1"; shift
     DST="$1"; shift
-    
+
     if [[ $# -gt 0 ]]; then
       local DIR="$1"; shift
     else
       local DIR="/tmp"
     fi
-    
+
     if [[ ! -d "${DIR}" ]]; then
       echo "Directory does not exist: ${DIR}"
       return 1
     fi
 
+    if ! pushd "${DIR}" > /dev/null; then
+      echo "Failed to push directory: ${DIR}"
+      return 1
+    fi
+
     cmd "${RSYNC}" ${OPTS} "$@" "${SRC}" "${DST}" 2>&1 | { grep --line-buffered -v "Pseudo-terminal will not be allocated because stdin is not a terminal."; true; }
-    return $?
-  }
-  
+    RET=$?
+
+    if ! popd > /dev/null; then
+      echo "Failed to pop directory."
+      return 1
+    fi
+
+    return $RET  }
+
   return 0
 }
