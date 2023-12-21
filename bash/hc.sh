@@ -87,7 +87,7 @@
   [[ ! -v DEBUG ]] && { exec 1>/dev/null; exec 2>/dev/null; }
 
   # Set a default TIMEOUT if not set.
-  [[ ! -v TIMEOUT || "${TIMEOUT}" -lt 0 ]] && TIMEOUT=50
+  [[ ! -v TIMEOUT || "${TIMEOUT}" -lt 0 ]] && TIMEOUT=900
   
   # No retries if not set.
   [[ ! -v RETRY || "${RETRY}" -lt 0 ]] && RETRY=0
@@ -237,7 +237,7 @@
         fi
       fi
 
-      sleep 0.1
+      sleep 10
     done
 
     if [[ ${SECONDS} -gt ${TIMEOUT} ]]; then
