@@ -66,7 +66,8 @@
       return 1
     fi
 
-    return $RET  }
+    return $RET
+  }
 
   return 0
 }
