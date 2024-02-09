@@ -84,7 +84,7 @@
 
   if [[ -v FREEBSD ]]; then
     echo '> sysctl'
-    echo "vfs.numvnodes: $(sysctl -n vfs.numvnodes) / $(sysctl -n kern.maxvnodes)"
+    echo "vfs.freevnodes: $(sysctl -n vfs.freevnodes) / $(sysctl -n kern.maxvnodes)"
     echo
   fi
 
@@ -108,9 +108,9 @@
 
   echo '> df'
   if [[ -v LINUX ]]; then
-    timeout 10s df -hTx tmpfs || RET=$?
+    timeout 30s df -hTx tmpfs || RET=$?
   else
-    timeout 10s df -hTt nonullfs,linprocfs,devfs,tmpfs,fdescfs,linsysfs,procfs,zfs || RET=$?
+    timeout 30s df -hTt nonullfs,linprocfs,devfs,fdescfs,linsysfs,procfs,zfs | sort || RET=$?
   fi
   echo
 
@@ -153,7 +153,7 @@
   ZPOOL="$(which zpool)"
   if [[ $? -eq 0 ]]; then
     echo '> zpool status'
-    timeout 30s ${ZPOOL} status || RET=$?
+    timeout 60s ${ZPOOL} status || RET=$?
     echo
   fi
 
@@ -203,7 +203,7 @@
   IOCAGE="$(which iocage)"
   if [[ $? -eq 0 ]]; then
     echo '> iocage list'
-    timeout 20s ${IOCAGE} list -l || RET=$?
+    timeout 60s ${IOCAGE} list -l || RET=$?
     echo
   fi
   
