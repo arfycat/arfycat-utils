@@ -90,6 +90,8 @@ EOF
   cp "${DIR}/../bash/rclone.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rclone-b2.filter" "${PKGDIR}/etc/" || exit $?
   cp "${DIR}/../bash/rclone-b2.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/rclone-s3c.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/rclone-s3c.filter" "${PKGDIR}/usr/share/arfycat/rclone-s3c.filter.sample" || exit $?
   cp "${DIR}/../bash/rocm-smi.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rsync.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rsync-compare.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
