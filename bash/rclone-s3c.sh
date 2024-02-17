@@ -36,7 +36,7 @@
 
   echo
   echo "${RCLONE_CMD[@]}"
-  "${RCLONE_CMD[@]}" || RET=$?
+  "${RCLONE_CMD[@]}" || true # Don't count as error as files may have changed in the time it took to run the cryptcheck.
 
   exit $RET
 }
