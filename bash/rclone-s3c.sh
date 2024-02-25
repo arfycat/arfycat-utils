@@ -31,6 +31,7 @@
   RCLONE_CMD+=("--fast-list") # Use recursive list if available; uses more memory but fewer transactions
   RCLONE_CMD+=("--filter-from") # Read file filtering patterns from a file (use - to read from stdin)
   RCLONE_CMD+=("$HOME/.config/arfycat/rclone-s3c.filter")
+  RCLONE_CMD+=("--one-way") # Check one way only, source files must exist on remote
   RCLONE_CMD+=("/")
   RCLONE_CMD+=("s3c:/")
 
