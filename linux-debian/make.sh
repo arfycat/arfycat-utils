@@ -107,8 +107,7 @@ EOF
   ln -s "hc" "${PKGDIR}/usr/bin/hcl" || exit $?
 
   chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit $?
-  sudo chown -R root:root "${PKGDIR}" || exit $?
-  dpkg-deb -Z xz --build "${PKGDIR}" || exit $?
+  dpkg-deb --root-owner-group -Z xz --build "${PKGDIR}" || exit $?
 }
 
 if [[ $# -ge 1 && "$1" == "repo" ]]; then
