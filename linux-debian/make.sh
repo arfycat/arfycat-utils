@@ -98,6 +98,7 @@ EOF
   cp "${DIR}/../bash/rsyslogd.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/smart-status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/sqlite3-backup-git.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/sysrq-reboot.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/wsl-init.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/zfs-snapshot.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
@@ -105,8 +106,8 @@ EOF
 
   ln -s "hc" "${PKGDIR}/usr/bin/hcl" || exit $?
 
+  chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit $?
   sudo chown -R root:root "${PKGDIR}" || exit $?
-  sudo chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit $?
   dpkg-deb -Z xz --build "${PKGDIR}" || exit $?
 }
 

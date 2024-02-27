@@ -73,6 +73,7 @@ cp "${DIR}/../bash/rsync-compare.sh" "${STAGEDIR}/usr/local/share/arfycat/" || e
 cp "${DIR}/../bash/smart-status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/status-jail.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/sqlite3-backup-git.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/zfs-snapshot.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../vim/.vimrc" "${STAGEDIR}/usr/local/share/arfycat/.vimrc.sample" || exit $?
 
@@ -104,6 +105,7 @@ cat > "${STAGEDIR}/plist" << EOF || exit $?
 @(root,wheel,755) share/arfycat/smart-status.sh
 @(root,wheel,755) share/arfycat/status.sh
 @(root,wheel,755) share/arfycat/status-jail.sh
+@(root,wheel,644) share/arfycat/sqlite3-backup-git.sh
 @(root,wheel,755) share/arfycat/zfs-snapshot.sh
 @sample(root,wheel,644) share/arfycat/.vimrc.sample
 EOF
