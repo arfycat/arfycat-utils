@@ -1,5 +1,17 @@
 #!/usr/bin/false
 {
+  add()
+  {
+    DIR="$1" || return $?
+    FILE="$2" || return $?
+
+    cd "$DIR" || return $?
+
+    git pull -q || return $?
+    git add "$DIR/$FILE" || return $?
+    return 0
+  }
+
   backup()
   {
     DB="$1" || return $?
@@ -9,10 +21,7 @@
     cd "$DIR" || return $?
     sqlite3 "$DB" .dump > "$DIR/$FILE" || return $?
 
-    git checkout -q cron || return $?
-    git pull -q || return $?
-    git add "$DIR/$FILE" || return $?
-
+    add "$DIR" "$FILE" || return $?
     return 0
   }
 
