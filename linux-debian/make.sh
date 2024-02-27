@@ -32,7 +32,7 @@ repo() {
 
 package() {
   if [ -d "${STAGEDIR}" ]; then
-    sudo rm -rf -- "${STAGEDIR}" || exit $?
+    rm -rf -- "${STAGEDIR}" || exit $?
   fi
 
   if [ ! -d "${STAGEDIR}" ]; then
