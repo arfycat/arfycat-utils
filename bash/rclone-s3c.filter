@@ -1,0 +1,33 @@
+- .cache/
+- .npm/
+
++ /etc/**
+
+- /home/*/log/
+- /home/*/run/
+- /home/*/tmp/
++ /home/**
+
+- /root/log/
+- /root/run/
+- /root/tmp/
++ /root/**
+
++ /usr/local/**
+
+- /var/lib/command-not-found/
+- /var/lib/containerd/
+- /var/lib/docker/
+- /var/lib/landscape/
+- /var/lib/mysql/
+- /var/lib/nginx/
+- /var/lib/oracle-cloud-agent/tmp/
+- /var/lib/powerdns/pdns.sqlite3*
+- /var/lib/snapd/
+- /var/lib/syncthing/discosrv/discovery.db/
+- /var/lib/ubuntu-advantage/
++ /var/lib/**
+
++ /var/spool/**
+
+- *

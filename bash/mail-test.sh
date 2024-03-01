@@ -1,22 +1,30 @@
 #!/usr/bin/env bash
-if ! PATH="${PATH}:/usr/local/share/arfycat:/usr/share/arfycat" source bashutils.sh; then echo Failed to source arfycat/bashutils.sh; exit 255; fi
-PATH="${PATH}:/usr/local/sbin:/usr/sbin:/sbin"
+{
+  set -euo pipefail
 
-if [[ -f /etc/mailname ]]; then
-  HOST="$(cat /etc/mailname)"
-else
-  HOST="$(hostname -f)"
-fi
+  if [[ -f /etc/mailname ]]; then
+    HOST="$(cat /etc/mailname)"
+  else
+    HOST="$(hostname -f)"
+  fi
 
-if [[ $? -gt 0 ]]; then
-  TO="$1"
-else
-  TO="root"
-fi
+  if [[ $# -gt 0 ]]; then
+    TO="$1"
+    shift
+  else
+    TO="root"
+  fi
 
-cat <<EOF | sendmail ${TO}
+  if [[ $# -gt 0 ]]; then
+    FROM="$1"
+    shift
+  else
+    FROM="$(whoami)@${HOST}"
+  fi
+
+  cat <<EOF | sendmail ${TO}
 Subject: TEST $(date) 
-From: TEST ${HOST} <$(whoami)@${HOST}>
+From: TEST ${HOST} <${FROM}>
 
 
 Test script: $(realpath "$0") $*
@@ -24,3 +32,6 @@ This is a test of the email system.  If this was an actual email, there would be
 
 $(uuidgen)
 EOF
+  exit $?
+}
+

@@ -12,7 +12,7 @@ PKGDIR="${STAGEDIR}/arfycat-utils_${VERSION}_all"
 PKGSDIR="${DIR}/packages"
 
 clean() {
-  sudo rm -rf -- "${STAGEDIR}"
+  rm -rf -- "${STAGEDIR}"
 }
 
 repo() {
@@ -32,7 +32,7 @@ repo() {
 
 package() {
   if [ -d "${STAGEDIR}" ]; then
-    sudo rm -rf -- "${STAGEDIR}" || exit $?
+    rm -rf -- "${STAGEDIR}" || exit $?
   fi
 
   if [ ! -d "${STAGEDIR}" ]; then
@@ -90,12 +90,15 @@ EOF
   cp "${DIR}/../bash/rclone.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rclone-b2.filter" "${PKGDIR}/etc/" || exit $?
   cp "${DIR}/../bash/rclone-b2.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/rclone-s3c.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/rclone-s3c.filter" "${PKGDIR}/usr/share/arfycat/rclone-s3c.filter.sample" || exit $?
   cp "${DIR}/../bash/rocm-smi.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rsync.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rsync-compare.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/rsyslogd.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/smart-status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/status.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
+  cp "${DIR}/../bash/sqlite3-backup-git.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/sysrq-reboot.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/wsl-init.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/zfs-snapshot.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
@@ -103,9 +106,8 @@ EOF
 
   ln -s "hc" "${PKGDIR}/usr/bin/hcl" || exit $?
 
-  sudo chown -R root:root "${PKGDIR}" || exit $?
-  sudo chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit $?
-  dpkg-deb -Z xz --build "${PKGDIR}" || exit $?
+  chmod -R u+Xrw,g+Xr-w,o+Xr-w "${PKGDIR}" || exit $?
+  dpkg-deb --root-owner-group -Z xz --build "${PKGDIR}" || exit $?
 }
 
 if [[ $# -ge 1 && "$1" == "repo" ]]; then

@@ -66,11 +66,14 @@ cp "${DIR}/../bash/rclone.filter" "${STAGEDIR}/usr/local/etc/rclone.filter.sampl
 cp "${DIR}/../bash/rclone.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/rclone-b2.filter" "${STAGEDIR}/usr/local/etc/rclone-b2.filter.sample" || exit $?
 cp "${DIR}/../bash/rclone-b2.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/rclone-s3c.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/rclone-b2.filter" "${STAGEDIR}/usr/local/share/arfycat/rclone-s3c.filter.sample" || exit $?
 cp "${DIR}/../bash/rsync.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/rsync-compare.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/smart-status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/status.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/status-jail.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/sqlite3-backup-git.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/zfs-snapshot.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../vim/.vimrc" "${STAGEDIR}/usr/local/share/arfycat/.vimrc.sample" || exit $?
 
@@ -95,11 +98,14 @@ cat > "${STAGEDIR}/plist" << EOF || exit $?
 @(root,wheel,755) share/arfycat/rclone.sh
 @sample(root,wheel,644) etc/rclone-b2.filter.sample
 @(root,wheel,755) share/arfycat/rclone-b2.sh
+@(root,wheel,755) share/arfycat/rclone-s3c.sh
+@sample(root,wheel,644) share/arfycat/rclone-s3c.filter.sample
 @(root,wheel,755) share/arfycat/rsync.sh
 @(root,wheel,755) share/arfycat/rsync-compare.sh
 @(root,wheel,755) share/arfycat/smart-status.sh
 @(root,wheel,755) share/arfycat/status.sh
 @(root,wheel,755) share/arfycat/status-jail.sh
+@(root,wheel,644) share/arfycat/sqlite3-backup-git.sh
 @(root,wheel,755) share/arfycat/zfs-snapshot.sh
 @sample(root,wheel,644) share/arfycat/.vimrc.sample
 EOF
