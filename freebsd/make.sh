@@ -61,6 +61,7 @@ cp "${DIR}/../bash/mail-test.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit 
 cp "${DIR}/../bash/manage-mining.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/mariabackup.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/monitor-services.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
+cp "${DIR}/../bash/mysql-backup.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/nsupdate.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/rclone.filter" "${STAGEDIR}/usr/local/etc/rclone.filter.sample" || exit $?
 cp "${DIR}/../bash/rclone.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
@@ -93,6 +94,7 @@ cat > "${STAGEDIR}/plist" << EOF || exit $?
 @(root,wheel,755) share/arfycat/manage-mining.sh
 @(root,wheel,755) share/arfycat/mariabackup.sh
 @(root,wheel,755) share/arfycat/monitor-services.sh
+@(root,wheel,755) share/arfycat/mysql-backup.sh
 @(root,wheel,755) share/arfycat/nsupdate.sh
 @sample(root,wheel,644) etc/rclone.filter.sample
 @(root,wheel,755) share/arfycat/rclone.sh
