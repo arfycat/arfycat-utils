@@ -246,7 +246,11 @@
     echo '> smartctl'
     if [[ -v FREEBSD ]]; then
       while read -r DEV; do
-        DEV="/dev/${DEV//nvd/nvme}"
+        # On FreeBSD, smartctl only works on /dev/nvme# devices.
+        DEV="${DEV/nda/nvme}"
+        DEV="${DEV/nvd/vnme}"
+        DEV="/dev/${DEV}"
+
         if [[ -e "${DEV}" ]]; then
           echo "${DEV}:"
           timeout 10s ${SMARTCTL} -iAH -l error ${DEV} | egrep -v '^(smartctl |Copyright |Host [a-zA-Z]+ Commands|Controller Busy Time|=== START)'
