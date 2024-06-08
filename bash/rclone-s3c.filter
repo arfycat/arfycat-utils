@@ -1,6 +1,7 @@
 - .cache/
 - .npm/
 
+- /etc/unbound/unbound.conf.d/blocked-names.conf
 + /etc/**
 
 - /home/*/log/

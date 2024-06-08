@@ -62,5 +62,6 @@
 - ssh/moduli
 - Thumbs.db
 - tmp/
+- unbound.conf.d/blocked-names.conf
 - wplr-tmp/
 - wpmc-trash/
