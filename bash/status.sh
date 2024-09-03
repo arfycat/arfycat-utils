@@ -2,7 +2,7 @@
 {
   if ! PATH="${PATH}:/usr/local/share/arfycat:/usr/share/arfycat" source bashutils.sh; then echo Failed to source arfycat/bashutils.sh; exit 255; fi
   PATH="${PATH}:/usr/local/sbin:/usr/sbin:/sbin"
-  
+
   RET=0
 
   if [[ $(uname) == "Linux" ]]; then
@@ -11,72 +11,11 @@
     FREEBSD=
   fi
 
-  # top
-  TOP_FILE=; get_tmp_file TOP_FILE
-  (
-    echo '> top' > ${TOP_FILE}
-    if [[ -v LINUX ]]; then
-      timeout 5s top -bn1 -w120 | tail -n+2 | head -n20 >> ${TOP_FILE} 2>&1
-      timeout 5s top -bn1 -w120 -o%MEM | tail -n+6 | head -n16 >> ${TOP_FILE} 2>&1
-      echo >> ${TOP_FILE}
-    else
-      timeout 5s top -btd1 | tail -n+2 >> ${TOP_FILE} 2>&1
-      timeout 5s top -btd1 -ores | tail -n+9 >> ${TOP_FILE} 2>&1
-    fi
-  ) &
-  wait_pids_add "$!"
-
-  # ifstat
-  IFSTAT="$(which ifstat)"
-  if [[ $? -eq 0 ]]; then
-    IFSTAT_FILE=; get_tmp_file IFSTAT_FILE
-    {
-      echo '> ifstat' > "${IFSTAT_FILE}"
-      timeout 40s ${IFSTAT} 30 1 >> "${IFSTAT_FILE}" 2>&1
-      echo >> "${IFSTAT_FILE}"
-    } &
-    wait_pids_add "$!"
-  fi
-
-  # bwm-ng
-  BWMNG="$(which bwm-ng)"
-  if [[ $? -eq 0 ]]; then
-    BWMNG_FILE=; get_tmp_file BWMNG_FILE
-    (
-      echo '> bwm-ng' > ${BWMNG_FILE}
-      timeout 40s ${BWMNG} -c1 -t30000 -o plain | tail -n+2 >> ${BWMNG_FILE} 2>&1
-      echo >> ${BWMNG_FILE}
-    ) &
-    wait_pids_add "$!"
-  fi
-
-  # iostat
-  IOSTAT="$(which iostat)"
-  if [[ $? -eq 0 ]]; then
-    IOSTAT_FILE=; get_tmp_file IOSTAT_FILE
-    (
-      echo '> iostat' > ${IOSTAT_FILE}
-      if [[ -v LINUX ]]; then
-        timeout 40s ${IOSTAT} -dhpy 30 1 | egrep -v "^$|loop|Linux" >> ${IOSTAT_FILE} 2>&1
-      else
-        timeout 40s ${IOSTAT} -tda -dzx -c1 >> ${IOSTAT_FILE} 2>&1
-      fi
-      echo >> ${IOSTAT_FILE}
-    ) &
-    wait_pids_add "$!"
-  fi
-
-  #/usr/bin/w
-  #echo
-
-  wait_pids
-
   echo "$(date "+%Y-%m-%d") $(uptime)"
   uname -v || RET=$?
   echo
 
-  UPRECORDS="$(which uprecords)"
-  if [[ $? -eq 0 ]]; then
+  if UPRECORDS="$(which uprecords)"; then
     echo '> uprecords'
     ${UPRECORDS} -w -a || RET=$?
     echo
@@ -88,23 +27,37 @@
     echo
   fi
 
-  [[ -v TOP_FILE && -r "${TOP_FILE}" ]] && cat "${TOP_FILE}"
+  echo '> top'
+  if [[ -v LINUX ]]; then
+    timeout 5s top -bn1 -w120 | tail -n+2 | head -n20
+    timeout 5s top -bn1 -w120 -o%MEM | tail -n+6 | head -n16
+    echo
+  else
+    timeout 5s top -btd1 | tail -n+2
+    timeout 5s top -btd1 -ores | tail -n+9
+  fi
 
-  APCACCESS="$(which apcaccess)"
-  if [[ $? -eq 0 ]]; then
+  if APCACCESS="$(which apcaccess)"; then
+    echo '> apcaccess'
     "${APCACCESS}" || RET=$?
     echo
   fi
 
-  WG="$(which wg)"
-  if [[ $? -eq 0 ]]; then
+  if WG="$(which wg)"; then
     echo '> wg'
     "${WG}" || RET=$?
     echo
   fi
 
-  if [[ -v IFSTAT_FILE && -r "${IFSTAT_FILE}" ]]; then cat "${IFSTAT_FILE}";
-  elif [[ -v BWMNG_FILE && -r "${BWMNG_FILE}" ]]; then cat "${BWMNG_FILE}"; fi
+  if IFSTAT="$(which ifstat)"; then
+    echo '> ifstat'
+    timeout 40s ${IFSTAT} 30 1
+    echo
+  elif BWMNG="$(which bwm-ng)"; then
+    echo '> bwm-ng'
+    timeout 40s ${BWMNG} -c1 -t30000 -o plain | tail -n+2
+    echo
+  fi
 
   echo '> df'
   if [[ -v LINUX ]]; then
@@ -114,7 +67,16 @@
   fi
   echo
 
-  [[ -v IOSTAT_FILE && -r "${IOSTAT_FILE}" ]] && cat "${IOSTAT_FILE}"
+  if IOSTAT="$(which iostat)"; then
+
+    echo '> iostat'
+    if [[ -v LINUX ]]; then
+      timeout 40s ${IOSTAT} -dhpy 30 1 | egrep -v "^$|loop|Linux"
+    else
+      timeout 40s ${IOSTAT} -tda -dzx -c1
+    fi
+    echo
+  fi
 
   if [[ -x /home/chiafarmer/chia-blockchain/activate ]]; then
     echo '> chia farm summary'
@@ -150,15 +112,13 @@
     echo
   fi
 
-  ZPOOL="$(which zpool)"
-  if [[ $? -eq 0 ]]; then
+  if ZPOOL="$(which zpool)"; then
     echo '> zpool status'
     timeout 60s ${ZPOOL} status || RET=$?
     echo
   fi
 
-  ZFS="$(which zfs)"
-  if [[ $? -eq 0 ]]; then
+  if ZFS="$(which zfs)"; then
     echo '> zfs list'
     timeout 60s ${ZFS} list || RET=$?
     echo
@@ -173,56 +133,48 @@
     fi
   fi
 
-  NVIDIA_SMI="$(which nvidia-smi)"
-  if [ $? -eq 0 ]; then
+  if NVIDIA_SMI="$(which nvidia-smi)"; then
     echo '> nvidia-smi'
     timeout 10s su -m nobody -c "${NVIDIA_SMI}" || RET=$?
     echo
   fi
 
-  HWSTAT="$(which hwstat)"
-  if [[ $? -eq 0 ]]; then
+  if HWSTAT="$(which hwstat)"; then
     echo '> hwstat'
     timeout 10s ${HWSTAT} || RET=$?
     echo
   fi
 
-  SENSORS="$(which sensors)"
-  if [[ $? -eq 0 ]]; then
+  if SENSORS="$(which sensors)"; then
     echo '> sensors'
     timeout 10s ${SENSORS} || RET=$?
     #echo
   fi
 
-  MBMON="$(which mbmon)"
-  if [[ $? -eq 0 ]]; then
+  if MBMON="$(which mbmon)"; then
     timeout 10s ${MBMON} -c1 -r || RET=$?
     echo
   fi
 
-  IOCAGE="$(which iocage)"
-  if [[ $? -eq 0 ]]; then
+  if IOCAGE="$(which iocage)"; then
     echo '> iocage list'
     timeout 60s ${IOCAGE} list -l || RET=$?
     echo
   fi
   
-  VM="$(which vm)"
-  if [[ $? -eq 0 ]]; then
+  if VM="$(which vm)"; then
     echo '> vm list'
     ${VM} list || RET=$?
     echo
   fi
   
-  DOCKER="$(which docker)"
-  if [[ $? -eq 0 ]]; then
+  if DOCKER="$(which docker)"; then
     echo '> docker compose ls'
     ${DOCKER} compose ls || RET=$?
     echo
   fi
 
-  VIRSH="$(which virsh)"
-  if [[ $? -eq 0 ]]; then
+  if VIRSH="$(which virsh)"; then
     echo '> virsh list'
     ${VIRSH} list || RET=$?
   fi
@@ -241,8 +193,7 @@
     echo
   fi
 
-  SMARTCTL="$(which smartctl)"
-  if [[ $? -eq 0 ]]; then
+  if SMARTCTL="$(which smartctl)"; then
     echo '> smartctl'
     if [[ -v FREEBSD ]]; then
       while read -r DEV; do
