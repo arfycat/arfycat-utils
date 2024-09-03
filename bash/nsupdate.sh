@@ -48,12 +48,6 @@
   fi
 
   CURL_ARGS=()
-  if [[ $OSTYPE == "FreeBSD" || $OSTYPE == "freebsd"* ]]; then
-    :
-  else
-    CURL_ARGS+=("--dns-servers")
-    CURL_ARGS+=("$RSERVER:$RPORT")
-  fi
 
   _query() {
     local TYPE="$1"

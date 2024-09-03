@@ -1,13 +1,24 @@
 - .cache/
 - .npm/
 
+- /etc/unbound/unbound.conf.d/blocked-names.conf
 + /etc/**
 
++ .git/config
++ .git/HEAD
+- .git/
+
++ **/git/*/.git/config
++ **/git/*/.git/HEAD
+- **/git/*/.git/
+
+- /home/*/git/
 - /home/*/log/
 - /home/*/run/
 - /home/*/tmp/
 + /home/**
 
+- /root/git/
 - /root/log/
 - /root/run/
 - /root/tmp/
