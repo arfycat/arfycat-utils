@@ -61,9 +61,9 @@
 
   echo '> df'
   if [[ -v LINUX ]]; then
-    timeout 30s df -hTx tmpfs || RET=$?
+    timeout 60s df -hTx tmpfs || RET=$?
   else
-    timeout 30s df -hTt nonullfs,linprocfs,devfs,fdescfs,linsysfs,procfs,zfs | sort || RET=$?
+    timeout 60s df -hTt nonullfs,linprocfs,devfs,fdescfs,linsysfs,procfs,zfs | sort || RET=$?
   fi
   echo
 
@@ -114,13 +114,13 @@
 
   if ZPOOL="$(which zpool)"; then
     echo '> zpool status'
-    timeout 60s ${ZPOOL} status || RET=$?
+    timeout 120s ${ZPOOL} status || RET=$?
     echo
   fi
 
   if ZFS="$(which zfs)"; then
     echo '> zfs list'
-    timeout 60s ${ZFS} list || RET=$?
+    timeout 120s ${ZFS} list || RET=$?
     echo
   fi
 
@@ -158,7 +158,7 @@
 
   if IOCAGE="$(which iocage)"; then
     echo '> iocage list'
-    timeout 60s ${IOCAGE} list -l || RET=$?
+    timeout 120s ${IOCAGE} list -l || RET=$?
     echo
   fi
   
