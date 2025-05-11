@@ -5,6 +5,48 @@
 
   RET=0
 
+  cmd() {
+    local _RET=-1
+
+    LOG_PRE="$1"
+    shift
+
+    TIMEOUT="$1"
+    shift
+
+    EXE="$1"
+    shift
+
+    local EXE_PATH="$(which "$EXE" 2> /dev/null)"
+    if [[ "$EXE_PATH" != "" ]]; then
+       _RET=0
+
+      if [[ "$LOG_PRE" != "" ]]; then
+        echo "> $LOG_PRE"
+      fi
+
+      if [[ $TIMEOUT != 0 ]]; then
+        timeout ${TIMEOUT}s "$EXE_PATH" "$@" || _RET=1
+      else
+        "$EXE_PATH" "$@" || _RET=1
+      fi
+    fi
+
+    if [[ $RET == 1 ]]; then
+      echo "Command Failed: $EXE_PATH $@"
+    fi
+
+    if [[ $_RET == 1 ]]; then
+      RET=$_RET
+    fi
+
+    if [[ $_RET != -1 ]]; then
+      echo
+    fi
+
+    return $_RET
+  }
+
   if [[ $(uname) == "Linux" ]]; then
     LINUX=
   elif [[ $(uname) == "FreeBSD" ]]; then
@@ -12,14 +54,9 @@
   fi
 
   echo "$(date "+%Y-%m-%d") $(uptime)"
-  uname -v || RET=$?
-  echo
+  cmd uname 0 uname -v
 
-  if UPRECORDS="$(which uprecords)"; then
-    echo '> uprecords'
-    ${UPRECORDS} -w -a || RET=$?
-    echo
-  fi
+  cmd uprecords 0 uprecords -w -a
 
   if [[ -v FREEBSD ]]; then
     echo '> sysctl'
@@ -29,168 +66,80 @@
 
   echo '> top'
   if [[ -v LINUX ]]; then
-    timeout 5s top -bn1 -w120 | tail -n+2 | head -n20
-    timeout 5s top -bn1 -w120 -o%MEM | tail -n+6 | head -n16
+    top -bn1 -w120 | tail -n+2 | head -n20
+    top -bn1 -w120 -o%MEM | tail -n+6 | head -n16
     echo
   else
-    timeout 5s top -btd1 | tail -n+2
-    timeout 5s top -btd1 -ores | tail -n+9
+    top -btd1 | tail -n+2
+    top -btd1 -ores | tail -n+9
   fi
 
-  if APCACCESS="$(which apcaccess)"; then
-    echo '> apcaccess'
-    "${APCACCESS}" || RET=$?
-    echo
-  fi
-
-  if WG="$(which wg)"; then
-    echo '> wg'
-    "${WG}" || RET=$?
-    echo
-  fi
+  cmd apcaccess 0 apcaccess
+  cmd wg 0 wg
 
   if IFSTAT="$(which ifstat)"; then
-    echo '> ifstat'
-    timeout 40s ${IFSTAT} 30 1
-    echo
+    cmd ifstat 0 "$IFSTAT" 30 1
   elif BWMNG="$(which bwm-ng)"; then
     echo '> bwm-ng'
-    timeout 40s ${BWMNG} -c1 -t30000 -o plain | tail -n+2
+    "$BWMNG" -c1 -t30000 -o plain | tail -n+2
     echo
   fi
 
-  echo '> df'
   if [[ -v LINUX ]]; then
-    timeout 30s df -hTx tmpfs || RET=$?
+    cmd df 0 df -hTx tmpfs
   else
-    timeout 30s df -hTt nonullfs,linprocfs,devfs,fdescfs,linsysfs,procfs,zfs | sort || RET=$?
+    echo '> df'
+    df -hTt nonullfs,linprocfs,devfs,fdescfs,linsysfs,procfs,zfs | sort || RET=$?
+    echo
   fi
-  echo
 
   if IOSTAT="$(which iostat)"; then
-
-    echo '> iostat'
     if [[ -v LINUX ]]; then
-      timeout 40s ${IOSTAT} -dhpy 30 1 | egrep -v "^$|loop|Linux"
+      echo '> iostat'
+      "$IOSTAT" -dhpy 30 1 | egrep -v "^$|loop|Linux"
+      echo
     else
-      timeout 40s ${IOSTAT} -tda -dzx -c1
+      cmd iostat 0 "$IOSTAT" -tda -dzx -c1
     fi
-    echo
   fi
 
   if [[ -x /home/chiafarmer/chia-blockchain/activate ]]; then
     echo '> chia farm summary'
-    timeout 10s  su - chiafarmer -c "cd ~; source chia-blockchain/activate; chia farm summary"
+    su - chiafarmer -c "cd ~; source chia-blockchain/activate; chia farm summary"
     echo
   fi
 
-  if [[ -x /home/flexfarmer/flexfarmer.sh ]]; then
-    echo '> flexfarmer'
-    timeout 10s /home/flexfarmer/flexfarmer.sh status || RET=$?
-    [[ -r /home/flexfarmer/log/flexfarmer.log ]] && grep eligible /home/flexfarmer/log/flexfarmer.log | tail -10 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^.* elapsed=/elapsed=/'
-    echo
-  fi
+  cmd 'zpool status' 0 zpool status
+  cmd 'zfs list' 0 zfs list
 
-  if [[ -x /home/phoenixminer/phoenixminer.sh ]]; then
-    echo '> phoenixminer'
-    timeout 10s /home/phoenixminer/phoenixminer.sh status || RET=$?
-    [[ -r /home/phoenixminer/log/PhoenixMiner.log ]] && tail -1000 /home/phoenixminer/log/PhoenixMiner.log | grep 'Eth speed' | tail -1 | sed 's/\x1b\[[0-9;]*m//g'
-    echo
-  fi
-
-  if [[ -x /home/lolminer/lolminer.sh ]]; then
-    echo '> lolminer'
-    timeout 10s /home/lolminer/lolminer.sh status || RET=$?
-    [[ -r /home/lolminer/log/lolMiner.log ]] && tail -100 /home/lolminer/log/lolMiner.log | grep 'Average speed' | tail -2 | sed 's/\x1b\[[0-9;]*m//g'
-    echo
-  fi
-
-  if [[ -x /home/raptoreum/cpuminer-gr-avx2.sh ]]; then
-    echo '> cpuminer-gr-avx2'
-    timeout 10s /home/raptoreum/cpuminer-gr-avx2.sh status || RET=$?
-    [[ -r /home/raptoreum/log/cpuminer-gr-avx2.log ]] && grep -a "Hashrate" /home/raptoreum/log/cpuminer-gr-avx2.log | tail -10 | sed 's/\x1b\[[0-9;]*m//g'
-    echo
-  fi
-
-  if ZPOOL="$(which zpool)"; then
-    echo '> zpool status'
-    timeout 60s ${ZPOOL} status || RET=$?
-    echo
-  fi
-
-  if ZFS="$(which zfs)"; then
-    echo '> zfs list'
-    timeout 60s ${ZFS} list || RET=$?
-    echo
-  fi
-
-  if [[ -d /opt ]]; then
+  if [[ -v LINUX && -d /opt ]]; then
     ROCM_SMI="$(find /opt -wholename "/opt/rocm-*/bin/rocm-smi")"
     if [[ $? -eq 0 && "${ROCM_SMI}" != "" && -x "${ROCM_SMI}" ]]; then
       echo '> rocm-smi'
-      timeout 10s su -m nobody -c "${ROCM_SMI}" 2>&1 | sed '/^[[:space:]]*$/d' || RET=$?
+      timeout 20s su -m nobody -c "${ROCM_SMI}" 2>&1 | sed '/^[[:space:]]*$/d' || RET=$?
       echo
     fi
   fi
 
   if NVIDIA_SMI="$(which nvidia-smi)"; then
     echo '> nvidia-smi'
-    timeout 10s su -m nobody -c "${NVIDIA_SMI}" || RET=$?
+    timeout 20s su -m nobody -c "${NVIDIA_SMI}" || RET=$?
     echo
   fi
 
-  if HWSTAT="$(which hwstat)"; then
-    echo '> hwstat'
-    timeout 10s ${HWSTAT} || RET=$?
-    echo
+  cmd hwstat 0 hwstat
+  cmd sensors 0 sensors
+  cmd mbmon 0 mbmon -c1 -r
+  cmd 'iocage list' 0 iocage list -l 
+  cmd 'vm list' 0 vm list
+  cmd 'docker compose ls' 0 docker compose ls
+  cmd 'virsh list' 0 virsh list
+  if [[ -e /sys/bus/usb/devices ]]; then
+    cmd lsusb 0 lsusb -t
   fi
 
-  if SENSORS="$(which sensors)"; then
-    echo '> sensors'
-    timeout 10s ${SENSORS} || RET=$?
-    #echo
-  fi
-
-  if MBMON="$(which mbmon)"; then
-    timeout 10s ${MBMON} -c1 -r || RET=$?
-    echo
-  fi
-
-  if IOCAGE="$(which iocage)"; then
-    echo '> iocage list'
-    timeout 60s ${IOCAGE} list -l || RET=$?
-    echo
-  fi
-  
-  if VM="$(which vm)"; then
-    echo '> vm list'
-    ${VM} list || RET=$?
-    echo
-  fi
-  
-  if DOCKER="$(which docker)"; then
-    echo '> docker compose ls'
-    ${DOCKER} compose ls || RET=$?
-    echo
-  fi
-
-  if VIRSH="$(which virsh)"; then
-    echo '> virsh list'
-    ${VIRSH} list || RET=$?
-  fi
-
-  LSUSB="$(which lsusb)"
-  if [[ $? -eq 0 && -e /sys/bus/usb/devices ]]; then
-    echo '> lsusb'
-    timeout 10s ${LSUSB} -t || RET=$?
-    echo
-  fi
-
-  LSBLK="$(which lsblk)"
-  if [[ $? -eq 0 && -e /sys/dev/block ]]; then
-    echo '> lsblk'
-    timeout 10s ${LSBLK} || RET=$?
-    echo
+  if [[ -e /sys/dev/block ]]; then
+    cmd lsblk 0 lsblk
   fi
 
   if SMARTCTL="$(which smartctl)"; then
@@ -204,14 +153,14 @@
 
         if [[ -e "${DEV}" ]]; then
           echo "${DEV}:"
-          timeout 10s ${SMARTCTL} -iAH -l error ${DEV} | egrep -v '^(smartctl |Copyright |Host [a-zA-Z]+ Commands|Controller Busy Time|=== START)'
+          timeout 20s ${SMARTCTL} -iAH -l error ${DEV} | egrep -v '^(smartctl |Copyright |Host [a-zA-Z]+ Commands|Controller Busy Time|=== START)'
         fi
       done < <(geom disk list | egrep '^Geom name:' | awk '{print $3}')
     else
       while read -r DEV; do
         echo "${DEV}:"
-        timeout 10s ${SMARTCTL} -iAH -l error /dev/${DEV} | egrep -v '^(smartctl |Copyright |Host [a-zA-Z]+ Commands|Controller Busy Time|=== START)'
-      done < <(timeout 5s lsblk -nal -o name,type 2>/dev/null | grep " disk" | cut -d' ' -f1)
+        timeout 20s ${SMARTCTL} -iAH -l error /dev/${DEV} | egrep -v '^(smartctl |Copyright |Host [a-zA-Z]+ Commands|Controller Busy Time|=== START)'
+      done < <(timeout 20s lsblk -nal -o name,type 2>/dev/null | grep " disk" | cut -d' ' -f1)
     fi
   fi
 
