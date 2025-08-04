@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/usr/bin/env bash
 #
 # Based on: https://betterprogramming.pub/how-to-create-a-basic-debian-package-927be001ad80
 #
