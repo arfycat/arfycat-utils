@@ -57,6 +57,7 @@ cp "${DIR}/../bash/delay.sh" "${STAGEDIR}/usr/local/etc/rc.d/delay" || exit $?
 cp "${DIR}/../bash/hc.sh" "${STAGEDIR}/usr/local/bin/hc" || exit $?
 cp "${DIR}/../bash/hc.sh" "${STAGEDIR}/usr/local/bin/hcl" || exit $?
 cp "${DIR}/../bash/hc.conf" "${STAGEDIR}/usr/local/etc/hc.conf.sample" || exit $?
+cp "${DIR}/../bash/hc1.sh" "${STAGEDIR}/usr/local/bin/hc1" || exit $?
 cp "${DIR}/../bash/mail-test.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/manage-mining.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
 cp "${DIR}/../bash/mariabackup.sh" "${STAGEDIR}/usr/local/share/arfycat/" || exit $?
@@ -88,6 +89,7 @@ cat > "${STAGEDIR}/plist" << EOF || exit $?
 @(root,wheel,755) share/arfycat/daemon.sh
 @(root,wheel,755) etc/rc.d/delay
 @(root,wheel,755) bin/hc
+@(root,wheel,755) bin/hc1
 @(root,wheel,755) bin/hcl
 @sample(root,wheel,644) etc/hc.conf.sample
 @(root,wheel,755) share/arfycat/mail-test.sh

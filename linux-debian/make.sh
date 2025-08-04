@@ -81,6 +81,7 @@ EOF
   cp "${DIR}/../bash/daemon.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/hc.sh" "${PKGDIR}/usr/bin/hc" || exit $?
   cp "${DIR}/../bash/hc.conf" "${PKGDIR}/etc/" || exit $?
+  cp "${DIR}/../bash/hc1.sh" "${PKGDIR}/usr/bin/hc1" || exit $?
   cp "${DIR}/../bash/mail-test.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/manage-mining.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
   cp "${DIR}/../bash/manage-power.sh" "${PKGDIR}/usr/share/arfycat/" || exit $?
