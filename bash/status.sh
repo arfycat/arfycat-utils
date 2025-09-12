@@ -144,24 +144,13 @@
 
   if SMARTCTL="$(which smartctl)"; then
     echo '> smartctl'
-    if [[ -v FREEBSD ]]; then
-      while read -r DEV; do
-        # On FreeBSD, smartctl only works on /dev/nvme# devices.
-        DEV="${DEV/nda/nvme}"
-        DEV="${DEV/nvd/vnme}"
-        DEV="/dev/${DEV}"
 
-        if [[ -e "${DEV}" ]]; then
-          echo "${DEV}:"
-          timeout 20s ${SMARTCTL} -iAH -l error ${DEV} | egrep -v '^(smartctl |Copyright |Host [a-zA-Z]+ Commands|Controller Busy Time|=== START)'
-        fi
-      done < <(geom disk list | egrep '^Geom name:' | awk '{print $3}')
-    else
-      while read -r DEV; do
+    while read -r DEV; do
+      if [[ -e "$DEV" ]] && smartctl -i "$DEV" >& /dev/null; then
         echo "${DEV}:"
-        timeout 20s ${SMARTCTL} -iAH -l error /dev/${DEV} | egrep -v '^(smartctl |Copyright |Host [a-zA-Z]+ Commands|Controller Busy Time|=== START)'
-      done < <(timeout 20s lsblk -nal -o name,type 2>/dev/null | grep " disk" | cut -d' ' -f1)
-    fi
+        timeout 20s "${SMARTCTL}" -iAH -l error "${DEV}" | egrep -v '^(smartctl |Copyright |Host [a-zA-Z]+ Commands|Controller Busy Time|=== START)'
+      fi
+    done < <(smartctl --scan | cut -d' ' -f1 | uniq | sort)
   fi
 
   exit $RET
