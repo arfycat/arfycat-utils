@@ -131,7 +131,7 @@
   cmd sensors 0 sensors
   cmd mbmon 0 mbmon -c1 -r
   cmd 'iocage list' 0 iocage list -l 
-  cmd 'vm list' 0 vm list
+  cmd 'vm list' 0 vm list -v
   cmd 'docker compose ls' 0 docker compose ls
   cmd 'virsh list' 0 virsh list
   if [[ -e /sys/bus/usb/devices ]]; then
