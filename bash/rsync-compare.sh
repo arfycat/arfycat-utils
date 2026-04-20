@@ -59,15 +59,6 @@
     LOCAL="${COLS[0]}"
     REMOTE="${COLS[1]}"
     sync "${SYNC_KEY}" "${SYNC_HOST}" "${LOCAL}" "${REMOTE}" "$@" || RET=$?
-  done < "${HOME}/${NAME}.dirs"
-  exit $RET
-
-  RET=0
-  while read -r LINE; do
-    IFS='|' read -a COLS <<< "${LINE}" || fail $? "Failed to parse line: ${LINE}"
-    LOCAL="${COLS[0]}"
-    REMOTE="${COLS[1]}"
-    sync "${SYNC_KEY}" "${SYNC_HOST}" "${LOCAL}" "${REMOTE}" "$@" || RET=$?
   done < <(cat "${HOME}/${NAME}.dirs")
   exit $RET
 }
