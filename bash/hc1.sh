@@ -48,6 +48,14 @@
   CMD="$1"
   shift
 
+  CURL_URL_ARGS=
+  if [[ -v CLIENT_CERT ]]; then
+    CURL_URL_ARGS+=" --cert-type P12 --cert ${CLIENT_CERT}"
+  fi
+
+  CURL_ARGS="-fs --connect-timeout 15 -m 20 -o /dev/null -w %{http_code}"
+  CURL_ARGS_NO_DATA="$CURL_ARGS"
+
   # lock(): Obtains an exclusive lock to ensure the script is only running once.  A simpler variation of the logic in
   #   bashutils.sh as the full logic is not required here.
   lock() {
@@ -79,6 +87,19 @@
   TMP_LOG="$(mktemp)"
   trap cleanup EXIT
 
+  # Try to ping HealthChecks to start.  Just give it 30 seconds, if it doesn't
+  # work, keep going.
+  CURL_CMD="curl ${CURL_ARGS_NO_DATA} ${CURL_URL_ARGS}"
+  while [[ $SECONDS -lt 30 ]]; do
+    HC_CODE="$(${CURL_CMD} "${CHECK_URL}/start")"
+    HC_RET=$?
+
+    if [[ ${HC_RET} -eq 0 && "${HC_CODE}" == "200" ]]; then
+      break
+    fi
+    sleep 1
+  done
+  
   RET=1
   echo "Command: ${CMD} $@"
   "${CMD}" "$@" >& "${TMP_LOG}"
@@ -116,9 +137,6 @@
     return 0
   }
 
-  CURL_ARGS="-fs --connect-timeout 15 -m 20 -o /dev/null -w %{http_code}"
-  CURL_ARGS_NO_DATA="$CURL_ARGS"
-
   if [[ -s "${TMP_LOG}" ]]; then
     CURL_ARGS+=" --data-binary @${TMP_LOG}"
   fi
@@ -126,10 +144,6 @@
   TIMEOUT=3600
   SECONDS=0
   HC_CODE=
-  CURL_URL_ARGS=
-  if [[ -v CLIENT_CERT ]]; then
-    CURL_URL_ARGS+=" --cert-type P12 --cert ${CLIENT_CERT}"
-  fi
   CURL_CMD="curl ${CURL_ARGS} ${CURL_URL_ARGS}"
 
   while :; do
